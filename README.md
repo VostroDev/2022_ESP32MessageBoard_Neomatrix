@@ -17,14 +17,10 @@ The time and message can be set using the build in webserver.
 ![Web Server](https://github.com/VostroDev/2022_ESP32MessageBoard_Neomatrix/blob/master/doc/webserver.png)
 
 ### Dependencies
-Neomatric Boards: https://www.adafruit.com/product/1487
+* NeoPixel NeoMatrix: https://www.adafruit.com/product/1487
+* DS3231 RTC Module: https://www.adafruit.com/product/3013
+* ESP32 Dev Board: https://www.adafruit.com/product/3405
 
-Arduino Libraries:
-  Adafruit RTC Lib: https://github.com/adafruit/RTClib                        (lib version 2.0.2)
-  ArduinoJson Benoit Blanchon: https://arduinojson.org                        (lib version 6.18.5)
-  FastLED Daniel Garcia: https://fastled.io/                                  (lib version
-  LEDText A Liddiment https://github.com/AaronLiddiment/LEDText               (lib version 3.4.0)
-  LEDMatrix A Liddiment https://github.com/AaronLiddiment/LEDMatrix           (lib version )
 
 ## Authors
 
