@@ -11,12 +11,15 @@ The display will scroll through a sequence displaying:
 The time and message can be set using the build in webserver.
 
 ## Getting Started
+Project build with Visual Studio Code and PlatformIO.
 
 ![Matrix Display](https://github.com/VostroDev/2022_ESP32MessageBoard_Neomatrix/blob/master/doc/matrix.png)
 
 ![Web Server](https://github.com/VostroDev/2022_ESP32MessageBoard_Neomatrix/blob/master/doc/webserver.png)
 
 ### Dependencies
+* Visual Studio Code: https://code.visualstudio.com/
+* PlatformIO: https://platformio.org/
 * NeoPixel NeoMatrix: https://www.adafruit.com/product/1487
 * DS3231 RTC Module: https://www.adafruit.com/product/3013
 * ESP32 Dev Board: https://www.adafruit.com/product/3405
