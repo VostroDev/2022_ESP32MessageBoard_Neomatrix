@@ -1,10 +1,20 @@
 # 2022_ESP32MessageBoard_Neomatrix
 
 ## Description
-This project is intended for use with an ESP32 microcontroller, DS3231 I2C RTC module and 4 8x8 NeoMatrix boards from Adafruit.
+This project is intended for use with an ESP32 microcontroller, DS3231 I2C RTC module and 4 8x8 NeoMatrix boards.
+The display will scroll through a sequence displaying:
+* Current Time
+* Temperature
+* Day of the week
+* Day and Month
+* Custom Message
+The time and message can be set using the build in webserver.
+
 ## Getting Started
 
-![This is an image](https://myoctocat.com/assets/images/base-octocat.svg)
+![Matrix Display](https://github.com/VostroDev/2022_ESP32MessageBoard_Neomatrix/blob/master/doc/matrix.png)
+
+![Web Server](https://github.com/VostroDev/2022_ESP32MessageBoard_Neomatrix/blob/master/doc/webserver.png)
 
 ### Dependencies
 Neomatric Boards: https://www.adafruit.com/product/1487
@@ -20,8 +30,7 @@ Arduino Libraries:
 
 Contributors names and contact info
 
-* R Wilson  
-* [email](vostrodev@gmail.com)
+* [R Wilson](vostrodev@gmail.com)  
 
 ## Version History
 
