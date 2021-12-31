@@ -1,14 +1,15 @@
 /*----------------------------------------------------------------------------------------
-  30/12/2021 (hi)
+  30/12/2021
   Author: R WILSON
   Platforms: ESP32
   Version: 1.0.0 - 30 DEC 2021
   Language: C/C++/Arduino
+  Working
   ----------------------------------------------------------------------------------------
   Description:
   ESP32 connected to NeoPixel WS2812B LED matrix display (32x8 - 4 Panels)
   MATRIX_TYPE      VERTICAL_MATRIX
-  RTC DS3231 I2C - SDA(21) and SCL(22)
+  RTC DS3231 I2C - SDA(21)gray    and SCL(22)purple
   TEMP SENSOR BUILD INTO DS3231
   ----------------------------------------------------------------------------------------
   Libraries:
@@ -30,7 +31,7 @@
 #include <Arduino.h>
 #include <SPI.h>
 #include "EEPROMHandler.h"                  // Storing message into permanent memory
-#include "index.h"                          // HTML message webpage with javascript
+#include "index.h"                          // HTML message  webpage with javascript
 #include "settings.h"                       // HTML settings webpage with javascript
 #include "timeset.h"                        // HTML settings webpage with javascript
 #include "timepicker.h"                     // HTML settings webpage with javascript
@@ -38,41 +39,71 @@
 #include <WiFi.h>
 #include <WebServer.h>
 #include <DNSServer.h>
+#include <ArduinoJson.h>
 
 #include <FastLED.h>
 #include <LEDMatrix.h>
 #include <LEDText.h>
 #include <FontMatrise.h>
 
-#include <ArduinoJson.h>
 #include <Wire.h>
 #include "RTClib.h"
 
-#define BUF_SIZE 400                        // 400 out of 512 used
+#define BUF_SIZE   400                      // 400 out of 512 used
 #define PASS_BSIZE 40                       // 40 out of 512 used
 #define PASS_EXIST 450                      // password $ address
 #define PASS_BEGIN 460                      // password value stored
+#define P_CHAR     '`'
 
 #define LED_BUILTIN 26
 
 #define LED_PIN 27
-#define VOLTS 5
-#define MAX_MA 400
+#define VOLTS   5
+#define MAX_MA  400
 
-#define MATRIX_WIDTH 32
+#define MATRIX_WIDTH  32
 #define MATRIX_HEIGHT 8
 #define MATRIX_TYPE VERTICAL_MATRIX
 
-#define P_CHAR   '`'
+#define  EFF_CHAR_UP          0xd8          // for sprintf change EFFECT_CHAR_UP to EFF_CHAR_UP in loop
+#define  EFF_CHAR_DOWN        0xd9
+#define  EFF_CHAR_LEFT        0xda
+#define  EFF_CHAR_RIGHT       0xdb
 
-int rc;
+#define  EFF_SCROLL_LEFT      0xdc
+#define  EFF_SCROLL_RIGHT     0xdd
+#define  EFF_SCROLL_UP        0xde
+#define  EFF_SCROLL_DOWN      0xdf
 
-char *ssid = "ESP32MessageBoard";           // Change to your name
-char password[PASS_BSIZE] = "12345678";
+#define  EFF_RGB              0xe0
+#define  EFF_HSV              0xe1
+#define  EFF_RGB_CV           0xe2
+#define  EFF_HSV_CV           0xe3
+#define  EFF_RGB_AV           0xe6
+#define  EFF_HSV_AV           0xe7
+#define  EFF_RGB_CH           0xea
+#define  EFF_HSV_CH           0xeb
+#define  EFF_RGB_AH           0xee
+#define  EFF_HSV_AH           0xef
+#define  EFF_COLR_EMPTY       0xf0
+#define  EFF_COLR_DIMMING     0xf1
+
+#define  EFF_BACKGND_ERASE    0xf4
+#define  EFF_BACKGND_LEAVE    0xf5
+#define  EFF_BACKGND_DIMMING  0xf6
+
+#define  EFF_FRAME_RATE       0xf8
+#define  EFF_DELAY_FRAMES     0xf9
+#define  EFF_CUSTOM_RC        0xfa
+
+int rc;                                      // custom return char for ledMatrix lib
+
+char ssid[] = "ESP32MessageBoard";           // Change to your name
+char password[PASS_BSIZE] = "12345678";      // dont change password here, change using web app
 
 uint16_t h = 0;
 uint16_t m = 0;
-RTC_Millis RTC; //  RTC_DS3231 RTC;         // TODO: use soft RTC for testing
+RTC_DS3231 RTC;
 
 const byte DNS_PORT = 53;
 
@@ -84,8 +115,6 @@ WebServer server(80);
 
 DateTime now;                               // Decalre global variable for time
 char szTime[6];                             // hh:mm\0
-char szTemp[6];                             // hh:mm\0
-char szMesg[BUF_SIZE] = "";
 char daysOfTheWeek[7][4] = {"SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"};
 
 char curMessage[BUF_SIZE] = "Vostro Message Board ";
@@ -100,18 +129,9 @@ cLEDText ScrollingMsg, StaticgMsg;
 
 char txtDateA[] = { EFFECT_HSV_AH "\x00\xff\xff\xff\xff\xff" "12|30" };
 char txtDateB[] = { EFFECT_HSV_AH "\x00\xff\xff\xff\xff\xff" "12:30" };
+char szMesg[BUF_SIZE] = { EFFECT_FRAME_RATE "\x00" EFFECT_HSV_AH "\x00\xff\xff\xff\xff\xff" EFFECT_SCROLL_LEFT "     ESP32 MESSAGE BOARD BY R WILSON     "  EFFECT_CUSTOM_RC "\x01" };
 
-char TxtDemo[] = { EFFECT_FRAME_RATE "\x00" EFFECT_HSV_AH "\x00\xff\xff\xff\xff\xff" 
-                                  EFFECT_SCROLL_LEFT "     12:30"  EFFECT_DELAY_FRAMES "\x00\x60" EFFECT_CUSTOM_RC "\x01"
-                                  EFFECT_RGB "\x80\x00\x80" EFFECT_SCROLL_LEFT "      17^ " EFFECT_DELAY_FRAMES "\x01\x00"
-                                  EFFECT_RGB "\xd3\x54\x00" EFFECT_SCROLL_LEFT "      WED " EFFECT_DELAY_FRAMES "\x01\x00"
-                                  EFFECT_RGB "\x00\x80\x80" EFFECT_SCROLL_LEFT "     12-06" EFFECT_DELAY_FRAMES "\x01\x00"
-                                  EFFECT_SCROLL_LEFT "     "
-                                  EFFECT_HSV_AH "\x00\xff\xff\xff\xff\xff" EFFECT_SCROLL_LEFT EFFECT_FRAME_RATE "\x02" "    JUST BREATHE     " EFFECT_FRAME_RATE "\x00"
-                                  };
-
-void handleTimeUpdate()
-{
+void handleTimeUpdate(){
   String data = server.arg("plain");
   server.send(200, "text/json", "{\"status\" : \"ok\", \"time\" : \"" + data + "\"}"); // log to console
   delay(100);
@@ -123,8 +143,7 @@ void handleTimeUpdate()
   Serial.println(data);
 }
 
-void handleMessageUpdate()
-{
+void handleMessageUpdate(){
   String data = server.arg("plain");
   server.send(200, "text/json", "{\"status\" : \"ok\", \"message\" : \"" + data + "\"}"); // log to console
   delay(100);
@@ -135,8 +154,7 @@ void handleMessageUpdate()
   Serial.println(data);
 }
 
-void handleSettingsUpdate()
-{
+void handleSettingsUpdate(){
   String json = server.arg("plain");
   const size_t bufferSize = JSON_OBJECT_SIZE(3) + 130;      // 130 XLarge buffer twice needed
 
@@ -180,8 +198,7 @@ void handleSettingsUpdate()
   }
 }
 
-void updateDefaultAPPassword()
-{
+void updateDefaultAPPassword(){
   if (eepromReadChar(PASS_EXIST) == P_CHAR)
   {
     delay(200);
@@ -213,29 +230,35 @@ void setup()
   Serial.println("");
   Serial.println("\n\nScrolling display from your Internet Browser");
 
-  Wire.begin(0, 2);                           // DS3231 RTC I2C - SDA(21) and SCL(22)
-
-  Serial.print("\nRTC STARTING >>> ");
-  /*                                           
-  if (! RTC.begin()) {                            // TODO: uncomment
+  //  RTC
+  Wire.begin();                             // DS3231 RTC I2C - SDA(21) and SCL(22)
+  Serial.print("\nRTC STARTING >>> ");                                  
+  if (! RTC.begin()) {
     Serial.println("RTC NOT FOUND");
     while (1);
   }
-  */
-  RTC.begin(DateTime(F(__DATE__), F(__TIME__)));  // TODO: delete
-  
-  DateTime mynow = RTC.now();                     // TODO: delete
-
   Serial.println("RTC STARTED");
 
-  pinMode(LED_BUILTIN, OUTPUT);               // Heartbeat
+  now = RTC.now(); 
+  sprintf(szTime, "Time: %02d:%02d", now.hour(), now.minute());
+  Serial.println(szTime);
+
+  pinMode(LED_BUILTIN, OUTPUT);             // Heartbeat
   digitalWrite(LED_BUILTIN, LOW);
 
-  EEPROM.begin(512);                          // Start ESP32 EEPROM
+  //  EEPROM
+  EEPROM.begin(512);
 
   Serial.println("\n\nEEPROM STARTED");
+
+  curMessage[0] = newMessage[0] = '\0';
+
+  eepromReadString(0,BUF_SIZE).toCharArray(curMessage,BUF_SIZE);  // Read stored msg from EEPROM address 0
+  newMessageAvailable = false;
+  Serial.print("Message: ");
+  Serial.println(curMessage);
   
-  // ! START DISPLAY
+  //  START DISPLAY
   FastLED.setMaxPowerInVoltsAndMilliamps(VOLTS, MAX_MA);
   FastLED.addLeds<WS2812B, LED_PIN, GRB>(leds[0], leds.Size()).setCorrection(TypicalLEDStrip);
   FastLED.setBrightness(30);
@@ -243,7 +266,7 @@ void setup()
 
   ScrollingMsg.SetFont(MatriseFontData);
   ScrollingMsg.Init(&leds, leds.Width(), ScrollingMsg.FontHeight() + 2, 0, 0);
-  ScrollingMsg.SetText((unsigned char *)TxtDemo, sizeof(TxtDemo) - 1);
+  ScrollingMsg.SetText((unsigned char *)szMesg, sizeof(szMesg) - 1);
   ScrollingMsg.SetTextColrOptions(COLR_RGB | COLR_SINGLE, 0x00, 0x00, 0xff);
 
   StaticgMsg.SetFont(MatriseFontData);
@@ -251,9 +274,7 @@ void setup()
   StaticgMsg.SetText((unsigned char *)txtDateA, sizeof(txtDateA) - 1);
   StaticgMsg.SetTextColrOptions(COLR_RGB | COLR_SINGLE, 0x00, 0x00, 0xff);
 
-  curMessage[0] = newMessage[0] = '\0';
-  // ! START DISPLAY
-
+  //  WIFI
   Serial.print("Connecting to ");
   Serial.println(ssid);  
 
@@ -287,25 +308,19 @@ void setup()
   server.begin();
   Serial.println("Server started");
 
-  eepromReadString(0,BUF_SIZE).toCharArray(curMessage,BUF_SIZE);  // Read stored msg from EEPROM address 0
-  newMessageAvailable = false;
-  Serial.print("Message: ");
-  Serial.println(curMessage);
-
-  now = RTC.now(); 
-  sprintf(szTime, "Time: %02d:%02d", now.hour(), now.minute());
-  Serial.println(szTime);
-
-
-  //*****************************************************************
-  
+  //  DISPLAY WELCOME MESSAGE
+  while(ScrollingMsg.UpdateText() != 1)
+  {
+    FastLED.show();
+    delay(20);
+  }
+  ScrollingMsg.SetText((unsigned char *)szMesg, sizeof(szMesg) - 1);   // rest to start of string
 }
 
 void loop()
 {
   static uint32_t timeLast = 0;               // Heartbeat
-  static uint8_t  display = 0;                // current display mode
-  static uint8_t t = 0;
+  static uint8_t t = 0;                       // temperature
   
   if (millis() - timeLast >= 1000){
     digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
@@ -328,53 +343,38 @@ void loop()
 
   if (newTimeAvailable){
     int tY, tM, tD, th, tm;
-    sscanf(newTime, "%2d.%2d.%4d %2d:%2d", &tD, &tM, &tY, &th, &tm); // format received dd.mm.yyy hh:ss
+    sscanf(newTime, "%2d.%2d.%4d %2d:%2d", &tD, &tM, &tY, &th, &tm); // extract received dd.mm.yyy hh:ss
     RTC.adjust(DateTime(tY, tM, tD, th, tm, 30));                    // rtc.adjust(DateTime(yyyy, m, d, h, m, s));
     newTimeAvailable = false;
     Serial.println(newTime);
     Serial.println("new time received, updated RTC");
   }
 
+  //txtDateA[7] = '2';// HRS//txtDateA[8] = '3';// HRS//txtDateA[10] = '5';// MIN//txtDateA[11] = '9';// MIN
+      
+  t = RTC.getTemperature() - 1;   // -1 is for calibration complard to fluke meter
 
-        //sprintf(szMesg, "%02d%c%02d", h, '~', m);  // ~| dot and colon
+  sprintf(txtDateA, "%c%c%c%c%c%c%c%02d%c%02d", EFF_HSV_AH,0x00,0xff,0xff,0xff,0xff,0xff,h,'|',m);
+  sprintf(txtDateB, "%c%c%c%c%c%c%c%02d%c%02d", EFF_HSV_AH,0x00,0xff,0xff,0xff,0xff,0xff,h,':',m);
 
-        //sprintf(szMesg, "%02d%c%02d", h, '|', m);  // ~| dot and colon
-
-        //printf(szMesg, "%02d%c%02d", h, '~', m);  // ~| dot and colon
-
-        //sprintf(szMesg, "%02d%c%02d", h, '|', m);  // ~| dot and colon
-
-        //?t = RTC.getTemperature();
-        t = 35;
-        //sprintf(szMesg, "%02d%c", t-3, '^');         // ^ degC sign
-
-        //sprintf(szMesg, "%02d%c%02d", now.day(), '-', now.month());
-
-        //sprintf(szMesg, "%s", daysOfTheWeek[now.dayOfTheWeek()]);
-
-        //sprintf(szMesg, "%s", curMessage);  
+  sprintf(szMesg, "%c%c%c%c%c%c%c%c%c%c%s%02d%c%02d%c%c%c%c%c%c%c%c%c%c%s%02d%c%c%c%c%c%c%c%c%c%c%s%s%c%c%c%c%c%c%c%c%c%s%02d%c%02d%c%c%c%c%s%c%c%c%c%c%c%c%c%c%c%s%s%s%c%c%c%c",
+                                  EFF_FRAME_RATE,0x00,EFF_HSV_AH,0x00,0xff,0xff,0xff,0xff,0xff,
+                                  EFF_SCROLL_LEFT,"     ",h,':',m,EFF_DELAY_FRAMES,0x00,0x60,EFF_CUSTOM_RC,0x02,
+                                  EFF_RGB,0x00,0xc8,0x64,EFF_SCROLL_LEFT,"      ",t,'^',' ',EFF_DELAY_FRAMES,0x01,0x00,
+                                  EFF_RGB,0xd3,0x54,0x00,EFF_SCROLL_LEFT,"      ",daysOfTheWeek[now.dayOfTheWeek()],' ',EFF_DELAY_FRAMES,0x01,0x00,
+                                  EFF_RGB,0x00,0x80,0x80,EFF_SCROLL_LEFT,"     ",now.day(),'-',now.month(),EFF_DELAY_FRAMES,0x01,0x00,
+                                  EFF_SCROLL_LEFT,"     ",
+                                  EFF_HSV_AH,0x00,0xff,0xff,0xff,0xff,0xff,EFF_SCROLL_LEFT,EFF_FRAME_RATE,0x02,"    ",curMessage,"     ",EFF_FRAME_RATE,0x00,
+                                  EFF_CUSTOM_RC,0x01);
 
 
-  //*************************************************************************
   rc = ScrollingMsg.UpdateText();
-  if (rc == -1)
+  if (rc == -1 || rc == 1)  // -1 means end of char array, 1 means end of msg because custom rc is received
   {
-    ScrollingMsg.SetText((unsigned char *)TxtDemo, sizeof(TxtDemo) - 1);
+    ScrollingMsg.SetText((unsigned char *)szMesg, sizeof(szMesg) - 1);
   }
-  else if (rc == 1)
+  else if (rc == 2)         //EFFECT_CUSTOM_RC "\x02"
   {
-    //EFFECT_CUSTOM_RC "\x01"
-    //FastLED.clear(true);
-    StaticgMsg.SetText((unsigned char *)txtDateA, sizeof(txtDateA) - 1);
-    StaticgMsg.UpdateText();
-    FastLED.show();
-    delay(2000);
-    //FastLED.clear(true);
-    StaticgMsg.SetText((unsigned char *)txtDateB, sizeof(txtDateB) - 1);
-    StaticgMsg.UpdateText();
-    FastLED.show();
-    delay(2000);
-    //FastLED.clear(true);
     StaticgMsg.SetText((unsigned char *)txtDateA, sizeof(txtDateA) - 1);
     StaticgMsg.UpdateText();
     FastLED.show();
@@ -383,7 +383,14 @@ void loop()
     StaticgMsg.UpdateText();
     FastLED.show();
     delay(2000);
-    //FastLED.clear(true);
+    StaticgMsg.SetText((unsigned char *)txtDateA, sizeof(txtDateA) - 1);
+    StaticgMsg.UpdateText();
+    FastLED.show();
+    delay(2000);
+    StaticgMsg.SetText((unsigned char *)txtDateB, sizeof(txtDateB) - 1);
+    StaticgMsg.UpdateText();
+    FastLED.show();
+    delay(2000);
     StaticgMsg.SetText((unsigned char *)txtDateA, sizeof(txtDateA) - 1);
     StaticgMsg.UpdateText();
     FastLED.show();
