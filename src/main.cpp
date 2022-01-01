@@ -60,6 +60,7 @@
 #define LED_PIN 27
 #define VOLTS   5
 #define MAX_MA  400
+#define BRIGHTNESS 30
 
 #define MATRIX_WIDTH  32
 #define MATRIX_HEIGHT 8
@@ -125,7 +126,9 @@ bool newTimeAvailable = false;
 
 cLEDMatrix<MATRIX_WIDTH, MATRIX_HEIGHT, MATRIX_TYPE> leds;
 
-cLEDText ScrollingMsg, StaticgMsg;
+cLEDText ScrollingMsg, StaticgMsg, RTCErrorMessage;
+
+CRGB fleds[256]; //!
 
 char txtDateA[] = { EFFECT_HSV_AH "\x00\xff\xff\xff\xff\xff" "12|30" };
 char txtDateB[] = { EFFECT_HSV_AH "\x00\xff\xff\xff\xff\xff" "12:30" };
@@ -224,18 +227,85 @@ void updateDefaultAPPassword(){
   delay(1000);
 }
 
+void rtcErrorHandler(){
+  char txtRTCError[BUF_SIZE] = { EFFECT_FRAME_RATE "\x00" EFFECT_HSV_AH "\x00\xff\xff\xff\xff\xff" EFFECT_SCROLL_LEFT "     RTC NOT FOUND     "  EFFECT_CUSTOM_RC "\x99" };
+  RTCErrorMessage.SetFont(MatriseFontData);
+  RTCErrorMessage.Init(&leds, leds.Width(), RTCErrorMessage.FontHeight() + 2, 0, 0);
+  RTCErrorMessage.SetText((unsigned char *)txtRTCError, sizeof(txtRTCError) - 1);
+  RTCErrorMessage.SetTextColrOptions(COLR_RGB | COLR_SINGLE, 0x00, 0x00, 0xff);
+
+  while(1) {
+    if(RTCErrorMessage.UpdateText() != 0x99) {
+      FastLED.show();
+      delay(30);
+    }
+    else {
+      RTCErrorMessage.SetText((unsigned char *)txtRTCError, sizeof(txtRTCError) - 1);
+      RTCErrorMessage.UpdateText();
+      FastLED.show();
+    }
+  }
+}
+
+void sinlon() //!
+{
+  FastLED.addLeds<WS2812B,LED_PIN,GRB>(fleds, 250).setCorrection(TypicalLEDStrip);  //std fastled for effects
+  FastLED.clear(true);
+  FastLED.setBrightness(150);
+  uint8_t gHue = 0;
+  int NUM_LEDS = 250;
+  int FRAMES_PER_SECOND = 120;
+  while(gHue <202)
+  {
+    fadeToBlackBy( fleds, NUM_LEDS, 20); // a colored dot sweeping back and forth, with fading trails
+    int pos = beatsin16( 13, 0, NUM_LEDS-1 );
+    fleds[pos] += CHSV( gHue, 255, 192);
+    FastLED.show();  
+    FastLED.delay(1000/FRAMES_PER_SECOND); 
+    
+    EVERY_N_MILLISECONDS( 20 ) { gHue++; } // slowly cycle the "base color" through the rainbow
+  }
+  FastLED.addLeds<WS2812B, LED_PIN, GRB>(leds[0], leds.Size()).setCorrection(TypicalLEDStrip); // back to Matrixled
+  FastLED.setBrightness(BRIGHTNESS);
+}
+
 void setup()
 {
   Serial.begin(115200);
   Serial.println("");
   Serial.println("\n\nScrolling display from your Internet Browser");
 
+  //  EEPROM
+  EEPROM.begin(512);
+  Serial.println("\n\nEEPROM STARTED");
+  curMessage[0] = newMessage[0] = '\0';
+  eepromReadString(0,BUF_SIZE).toCharArray(curMessage,BUF_SIZE);  // Read stored msg from EEPROM address 0
+  newMessageAvailable = false;
+  Serial.print("Message: ");
+  Serial.println(curMessage);
+  
+  //  START DISPLAY
+  FastLED.setMaxPowerInVoltsAndMilliamps(VOLTS, MAX_MA);
+  FastLED.addLeds<WS2812B, LED_PIN, GRB>(leds[0], leds.Size()).setCorrection(TypicalLEDStrip); //TypicalSMD5050
+  FastLED.setBrightness(BRIGHTNESS);
+  FastLED.clear(true);
+
+  ScrollingMsg.SetFont(MatriseFontData);
+  ScrollingMsg.Init(&leds, leds.Width(), ScrollingMsg.FontHeight() + 2, 0, 0);
+  ScrollingMsg.SetText((unsigned char *)szMesg, sizeof(szMesg) - 1);
+  ScrollingMsg.SetTextColrOptions(COLR_RGB | COLR_SINGLE, 0x00, 0x00, 0xff);
+
+  StaticgMsg.SetFont(MatriseFontData);
+  StaticgMsg.Init(&leds, leds.Width(), ScrollingMsg.FontHeight() + 2, 1, 0); // >> 1 pixel
+  StaticgMsg.SetText((unsigned char *)txtDateA, sizeof(txtDateA) - 1);
+  StaticgMsg.SetTextColrOptions(COLR_RGB | COLR_SINGLE, 0x00, 0x00, 0xff);
+
   //  RTC
   Wire.begin();                             // DS3231 RTC I2C - SDA(21) and SCL(22)
   Serial.print("\nRTC STARTING >>> ");                                  
   if (! RTC.begin()) {
     Serial.println("RTC NOT FOUND");
-    while (1);
+    rtcErrorHandler();
   }
   Serial.println("RTC STARTED");
 
@@ -246,39 +316,11 @@ void setup()
   pinMode(LED_BUILTIN, OUTPUT);             // Heartbeat
   digitalWrite(LED_BUILTIN, LOW);
 
-  //  EEPROM
-  EEPROM.begin(512);
-
-  Serial.println("\n\nEEPROM STARTED");
-
-  curMessage[0] = newMessage[0] = '\0';
-
-  eepromReadString(0,BUF_SIZE).toCharArray(curMessage,BUF_SIZE);  // Read stored msg from EEPROM address 0
-  newMessageAvailable = false;
-  Serial.print("Message: ");
-  Serial.println(curMessage);
-  
-  //  START DISPLAY
-  FastLED.setMaxPowerInVoltsAndMilliamps(VOLTS, MAX_MA);
-  FastLED.addLeds<WS2812B, LED_PIN, GRB>(leds[0], leds.Size()).setCorrection(TypicalLEDStrip);
-  FastLED.setBrightness(30);
-  FastLED.clear(true);
-
-  ScrollingMsg.SetFont(MatriseFontData);
-  ScrollingMsg.Init(&leds, leds.Width(), ScrollingMsg.FontHeight() + 2, 0, 0);
-  ScrollingMsg.SetText((unsigned char *)szMesg, sizeof(szMesg) - 1);
-  ScrollingMsg.SetTextColrOptions(COLR_RGB | COLR_SINGLE, 0x00, 0x00, 0xff);
-
-  StaticgMsg.SetFont(MatriseFontData);
-  StaticgMsg.Init(&leds, leds.Width(), ScrollingMsg.FontHeight() + 2, 1, 0);
-  StaticgMsg.SetText((unsigned char *)txtDateA, sizeof(txtDateA) - 1);
-  StaticgMsg.SetTextColrOptions(COLR_RGB | COLR_SINGLE, 0x00, 0x00, 0xff);
-
   //  WIFI
   Serial.print("Connecting to ");
   Serial.println(ssid);  
 
-  updateDefaultAPPassword();                  // get Wifi password from EEPROM
+  updateDefaultAPPassword();                // get Wifi password from EEPROM
 
   WiFi.mode(WIFI_AP);
   WiFi.softAPConfig(ip, ip, subnet);
@@ -309,12 +351,13 @@ void setup()
   Serial.println("Server started");
 
   //  DISPLAY WELCOME MESSAGE
+  sinlon();                                 //! Display special startup effect
   while(ScrollingMsg.UpdateText() != 1)
   {
     FastLED.show();
-    delay(20);
+    delay(30);
   }
-  ScrollingMsg.SetText((unsigned char *)szMesg, sizeof(szMesg) - 1);   // rest to start of string
+  ScrollingMsg.SetText((unsigned char *)szMesg, sizeof(szMesg) - 1);   // reset to start of string
 }
 
 void loop()
@@ -352,14 +395,14 @@ void loop()
 
   //txtDateA[7] = '2';// HRS//txtDateA[8] = '3';// HRS//txtDateA[10] = '5';// MIN//txtDateA[11] = '9';// MIN
       
-  t = RTC.getTemperature() - 1;   // -1 is for calibration complard to fluke meter
+  t = RTC.getTemperature();   // +or- from this for calibration
 
   sprintf(txtDateA, "%c%c%c%c%c%c%c%02d%c%02d", EFF_HSV_AH,0x00,0xff,0xff,0xff,0xff,0xff,h,'|',m);
   sprintf(txtDateB, "%c%c%c%c%c%c%c%02d%c%02d", EFF_HSV_AH,0x00,0xff,0xff,0xff,0xff,0xff,h,':',m);
 
   sprintf(szMesg, "%c%c%c%c%c%c%c%c%c%c%s%02d%c%02d%c%c%c%c%c%c%c%c%c%c%s%02d%c%c%c%c%c%c%c%c%c%c%s%s%c%c%c%c%c%c%c%c%c%s%02d%c%02d%c%c%c%c%s%c%c%c%c%c%c%c%c%c%c%s%s%s%c%c%c%c",
                                   EFF_FRAME_RATE,0x00,EFF_HSV_AH,0x00,0xff,0xff,0xff,0xff,0xff,
-                                  EFF_SCROLL_LEFT,"     ",h,':',m,EFF_DELAY_FRAMES,0x00,0x60,EFF_CUSTOM_RC,0x02,
+                                  EFF_SCROLL_LEFT,"     ",h,':',m,EFF_DELAY_FRAMES,0x00,0x3c,EFF_CUSTOM_RC,0x02,
                                   EFF_RGB,0x00,0xc8,0x64,EFF_SCROLL_LEFT,"      ",t,'^',' ',EFF_DELAY_FRAMES,0x01,0x00,
                                   EFF_RGB,0xd3,0x54,0x00,EFF_SCROLL_LEFT,"      ",daysOfTheWeek[now.dayOfTheWeek()],' ',EFF_DELAY_FRAMES,0x01,0x00,
                                   EFF_RGB,0x00,0x80,0x80,EFF_SCROLL_LEFT,"     ",now.day(),'-',now.month(),EFF_DELAY_FRAMES,0x01,0x00,
@@ -373,28 +416,26 @@ void loop()
   {
     ScrollingMsg.SetText((unsigned char *)szMesg, sizeof(szMesg) - 1);
   }
-  else if (rc == 2)         //EFFECT_CUSTOM_RC "\x02"
+  else if (rc == 2)                               // EFFECT_CUSTOM_RC "\x02"
   {
-    StaticgMsg.SetText((unsigned char *)txtDateA, sizeof(txtDateA) - 1);
-    StaticgMsg.UpdateText();
-    FastLED.show();
-    delay(2000);
-    StaticgMsg.SetText((unsigned char *)txtDateB, sizeof(txtDateB) - 1);
-    StaticgMsg.UpdateText();
-    FastLED.show();
-    delay(2000);
-    StaticgMsg.SetText((unsigned char *)txtDateA, sizeof(txtDateA) - 1);
-    StaticgMsg.UpdateText();
-    FastLED.show();
-    delay(2000);
-    StaticgMsg.SetText((unsigned char *)txtDateB, sizeof(txtDateB) - 1);
-    StaticgMsg.UpdateText();
-    FastLED.show();
-    delay(2000);
-    StaticgMsg.SetText((unsigned char *)txtDateA, sizeof(txtDateA) - 1);
-    StaticgMsg.UpdateText();
-    FastLED.show();
-    delay(2000);
+    for (int j = 2; j < 10; j++)                  // want to start on even number to run drawline
+    {
+      if(j % 2 == 0){ //even
+        StaticgMsg.SetText((unsigned char *)txtDateA, sizeof(txtDateA) - 1);
+        StaticgMsg.UpdateText();
+        leds.DrawLine(0, 0, 0, 7, CRGB(0, 0, 0)); // blank column 1, due to visual glitch text shifting << 1 pixel
+        FastLED.show();
+      }
+      else{
+        StaticgMsg.SetText((unsigned char *)txtDateB, sizeof(txtDateB) - 1);
+        StaticgMsg.UpdateText();
+        FastLED.show();
+      }
+
+      dnsServer.processNextRequest();             // dns server
+      server.handleClient();                      // WIFI
+      delay(1000);                                // put this sequence in loop to reduce wifi waiting time
+    }
   }
   else
   {
