@@ -2,7 +2,7 @@
   30/12/2021
   Author: R WILSON
   Platforms: ESP32
-  Version: 1.0.0 - 30 DEC 2021
+  Version: 1.0.1 - 30 DEC 2021
   Language: C/C++/Arduino
   Working
   ----------------------------------------------------------------------------------------
@@ -35,7 +35,7 @@
 #include "settings.h"                       // HTML settings webpage with javascript
 #include "timeset.h"                        // HTML settings webpage with javascript
 #include "timepicker.h"                     // HTML settings webpage with javascript
-
+#include "notfound.h"                       // HTML error 404 not found catch
 #include <WiFi.h>
 #include <WebServer.h>
 #include <DNSServer.h>
@@ -44,7 +44,7 @@
 #include <FastLED.h>
 #include <LEDMatrix.h>
 #include <LEDText.h>
-#include <FontMatrise.h>
+#include "FontRobert.h"                     // 5x7 font use <FontMatriseRW.h>
 
 #include <Wire.h>
 #include "RTClib.h"
@@ -55,12 +55,14 @@
 #define PASS_BEGIN 460                      // password value stored
 #define P_CHAR     '`'
 
+#define BRT_BEGIN  505                      // Brightness value stored
+
 #define LED_BUILTIN 26
 
 #define LED_PIN 27
 #define VOLTS   5
 #define MAX_MA  400
-#define BRIGHTNESS 30
+//#define BRIGHTNESS 30
 
 #define MATRIX_WIDTH  32
 #define MATRIX_HEIGHT 8
@@ -97,6 +99,8 @@
 #define  EFF_DELAY_FRAMES     0xf9
 #define  EFF_CUSTOM_RC        0xfa
 
+int BRIGHTNESS = 30;
+
 int rc;                                      // custom return char for ledMatrix lib
 
 char ssid[] = "ESP32MessageBoard";           // Change to your name
@@ -132,9 +136,10 @@ CRGB fleds[256]; //!
 
 char txtDateA[] = { EFFECT_HSV_AH "\x00\xff\xff\xff\xff\xff" "12|30" };
 char txtDateB[] = { EFFECT_HSV_AH "\x00\xff\xff\xff\xff\xff" "12:30" };
-char szMesg[BUF_SIZE] = { EFFECT_FRAME_RATE "\x00" EFFECT_HSV_AH "\x00\xff\xff\xff\xff\xff" EFFECT_SCROLL_LEFT "     ESP32 MESSAGE BOARD BY R WILSON     "  EFFECT_CUSTOM_RC "\x01" };
+char szMesg[BUF_SIZE] = { EFFECT_FRAME_RATE "\x00" EFFECT_HSV_AH "\x00\xff\xff\xff\xff\xff" EFFECT_SCROLL_LEFT "     ESP32 MESSAGE BOARD BY R WILSON    "  EFFECT_CUSTOM_RC "\x01" };
 
 void handleTimeUpdate(){
+  Serial.println("handleTimeUpdate");
   String data = server.arg("plain");
   server.send(200, "text/json", "{\"status\" : \"ok\", \"time\" : \"" + data + "\"}"); // log to console
   delay(100);
@@ -147,17 +152,34 @@ void handleTimeUpdate(){
 }
 
 void handleMessageUpdate(){
-  String data = server.arg("plain");
-  server.send(200, "text/json", "{\"status\" : \"ok\", \"message\" : \"" + data + "\"}"); // log to console
-  delay(100);
-  data.toCharArray(newMessage, data.length() + 1);  // read new message
-  newMessageAvailable = true;
+  Serial.println("handleMessageUpdate");
+  String json = server.arg("plain");
+  const size_t bufferSize = JSON_OBJECT_SIZE(2) + 350;      // Max message size buffer
+  
+  DynamicJsonDocument doc(bufferSize);
+  DeserializationError error = deserializeJson(doc, json);  // Deserialize the JSON document
 
-  Serial.print("new message: ");
-  Serial.println(data);
+  if (error)                                                // Test if parsing succeeds.
+  { 
+    Serial.print(F("deserializeJson() failed: "));
+    Serial.println(error.f_str());
+    return;
+  }
+
+  BRIGHTNESS = int(doc["brightness"]);
+  const char *xmessage = doc["message"];
+
+  server.send(200, "text/plain", "brightness:" + String(BRIGHTNESS) + " message:" + String(xmessage)); // log OK to console
+  delay(100);
+  Serial.print("message and brightness handle: ");
+  Serial.println(json);
+  
+  sprintf(newMessage, xmessage);
+  newMessageAvailable = true;
 }
 
 void handleSettingsUpdate(){
+  Serial.println("handleSettingsUpdate");
   String json = server.arg("plain");
   const size_t bufferSize = JSON_OBJECT_SIZE(3) + 130;      // 130 XLarge buffer twice needed
 
@@ -202,6 +224,7 @@ void handleSettingsUpdate(){
 }
 
 void updateDefaultAPPassword(){
+  Serial.println("updateDefaultAPPassword");
   if (eepromReadChar(PASS_EXIST) == P_CHAR)
   {
     delay(200);
@@ -229,8 +252,8 @@ void updateDefaultAPPassword(){
 
 void rtcErrorHandler(){
   char txtRTCError[BUF_SIZE] = { EFFECT_FRAME_RATE "\x00" EFFECT_HSV_AH "\x00\xff\xff\xff\xff\xff" EFFECT_SCROLL_LEFT "     RTC NOT FOUND     "  EFFECT_CUSTOM_RC "\x99" };
-  RTCErrorMessage.SetFont(MatriseFontData);
-  RTCErrorMessage.Init(&leds, leds.Width(), RTCErrorMessage.FontHeight() + 2, 0, 0);
+  RTCErrorMessage.SetFont(RobertFontData);
+  RTCErrorMessage.Init(&leds, leds.Width(), RTCErrorMessage.FontHeight() + 1, 0, 0); //? change to +2 for 5x7 font
   RTCErrorMessage.SetText((unsigned char *)txtRTCError, sizeof(txtRTCError) - 1);
   RTCErrorMessage.SetTextColrOptions(COLR_RGB | COLR_SINGLE, 0x00, 0x00, 0xff);
 
@@ -247,16 +270,13 @@ void rtcErrorHandler(){
   }
 }
 
-void sinlon() //!
+void fxSinlon() //!
 {
   FastLED.addLeds<WS2812B,LED_PIN,GRB>(fleds, 250).setCorrection(TypicalLEDStrip);  //std fastled for effects
   FastLED.clear(true);
   FastLED.setBrightness(150);
-  uint8_t gHue = 0;
-  int NUM_LEDS = 250;
-  int FRAMES_PER_SECOND = 120;
-  while(gHue <202)
-  {
+  int gHue = 0, NUM_LEDS = 250, FRAMES_PER_SECOND = 120;
+  while(gHue <201){
     fadeToBlackBy( fleds, NUM_LEDS, 20); // a colored dot sweeping back and forth, with fading trails
     int pos = beatsin16( 13, 0, NUM_LEDS-1 );
     fleds[pos] += CHSV( gHue, 255, 192);
@@ -283,20 +303,27 @@ void setup()
   newMessageAvailable = false;
   Serial.print("Message: ");
   Serial.println(curMessage);
+
+  BRIGHTNESS = eepromReadInt(BRT_BEGIN);                          // read Neomatrix brightness value
+  if(BRIGHTNESS > 254) { BRIGHTNESS = 30;}
+  Serial.print("NeoMatrix Brightness set to ");                   // done in line 318
+  Serial.println(BRIGHTNESS);
+  
   
   //  START DISPLAY
+  Serial.println("\nNEOMATRIX DIPLAY STARTED");
   FastLED.setMaxPowerInVoltsAndMilliamps(VOLTS, MAX_MA);
   FastLED.addLeds<WS2812B, LED_PIN, GRB>(leds[0], leds.Size()).setCorrection(TypicalLEDStrip); //TypicalSMD5050
   FastLED.setBrightness(BRIGHTNESS);
   FastLED.clear(true);
 
-  ScrollingMsg.SetFont(MatriseFontData);
-  ScrollingMsg.Init(&leds, leds.Width(), ScrollingMsg.FontHeight() + 2, 0, 0);
+  ScrollingMsg.SetFont(RobertFontData);
+  ScrollingMsg.Init(&leds, leds.Width(), ScrollingMsg.FontHeight() + 1, 0, 0); //? change to +2 for 5x7 font
   ScrollingMsg.SetText((unsigned char *)szMesg, sizeof(szMesg) - 1);
   ScrollingMsg.SetTextColrOptions(COLR_RGB | COLR_SINGLE, 0x00, 0x00, 0xff);
 
-  StaticgMsg.SetFont(MatriseFontData);
-  StaticgMsg.Init(&leds, leds.Width(), ScrollingMsg.FontHeight() + 2, 1, 0); // >> 1 pixel
+  StaticgMsg.SetFont(RobertFontData);
+  StaticgMsg.Init(&leds, leds.Width(), ScrollingMsg.FontHeight() + 1, 1, 0); // >> 1 pixel //? change to +2 for 5x7 font
   StaticgMsg.SetText((unsigned char *)txtDateA, sizeof(txtDateA) - 1);
   StaticgMsg.SetTextColrOptions(COLR_RGB | COLR_SINGLE, 0x00, 0x00, 0xff);
 
@@ -305,9 +332,9 @@ void setup()
   Serial.print("\nRTC STARTING >>> ");                                  
   if (! RTC.begin()) {
     Serial.println("RTC NOT FOUND");
-    rtcErrorHandler();
+    rtcErrorHandler();                      // Blocking call, dont move on
   }
-  Serial.println("RTC STARTED");
+  Serial.println("RTC STARTED\n");
 
   now = RTC.now(); 
   sprintf(szTime, "Time: %02d:%02d", now.hour(), now.minute());
@@ -317,7 +344,7 @@ void setup()
   digitalWrite(LED_BUILTIN, LOW);
 
   //  WIFI
-  Serial.print("Connecting to ");
+  Serial.print("\nWIFI >> Connecting to ");
   Serial.println(ssid);  
 
   updateDefaultAPPassword();                // get Wifi password from EEPROM
@@ -338,6 +365,8 @@ void setup()
   server.on("/timepicker",[](){server.send_P(200,"text/html", timepickerpage);});
   server.on("/timepicker/send", HTTP_POST, handleTimeUpdate);
 
+  server.onNotFound([]() {server.send_P(200,"text/html", notfoundpage);});
+
   dnsServer.setTTL(300);
   dnsServer.setErrorReplyCode(DNSReplyCode::ServerFailure);
   dnsServer.start(DNS_PORT, "www.message.com", ip);
@@ -348,10 +377,10 @@ void setup()
   Serial.println(myIP);
   
   server.begin();
-  Serial.println("Server started");
+  Serial.println("SERVER STARTED");
 
   //  DISPLAY WELCOME MESSAGE
-  sinlon();                                 //! Display special startup effect
+  fxSinlon();                                 //! Display special startup effect
   while(ScrollingMsg.UpdateText() != 1)
   {
     FastLED.show();
@@ -364,6 +393,7 @@ void loop()
 {
   static uint32_t timeLast = 0;               // Heartbeat
   static uint8_t t = 0;                       // temperature
+  static uint8_t updatetemp = 11;             // so updates temp at startup
   
   if (millis() - timeLast >= 1000){
     digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
@@ -372,6 +402,12 @@ void loop()
     now = RTC.now();                          // Update the global var with current time 
     m = now.minute();  
     h = now.hour();
+
+    updatetemp ++;                            // Update temperature every 10 sec, visual glitch
+    if(updatetemp > 10){
+      t = RTC.getTemperature();               // +or- from this for calibration
+      updatetemp = 0;
+    }
   }
 
   dnsServer.processNextRequest();             // dns server
@@ -381,7 +417,12 @@ void loop()
     strcpy(curMessage, newMessage);           // Copy new message to display
     eepromWriteString(0, newMessage);         // Write String to EEPROM Address 0
     newMessageAvailable = false;
-    Serial.println("new message received, updated EEPROM");
+    Serial.println("new message received, updated EEPROM\n");
+    delay(100);
+    eepromWriteInt(BRT_BEGIN, BRIGHTNESS);    // White new brightness value
+    FastLED.setBrightness(BRIGHTNESS);
+    Serial.print("NeoMatrix Brightness set to ");
+    Serial.println(BRIGHTNESS);
   }
 
   if (newTimeAvailable){
@@ -394,8 +435,6 @@ void loop()
   }
 
   //txtDateA[7] = '2';// HRS//txtDateA[8] = '3';// HRS//txtDateA[10] = '5';// MIN//txtDateA[11] = '9';// MIN
-      
-  t = RTC.getTemperature();   // +or- from this for calibration
 
   sprintf(txtDateA, "%c%c%c%c%c%c%c%02d%c%02d", EFF_HSV_AH,0x00,0xff,0xff,0xff,0xff,0xff,h,'|',m);
   sprintf(txtDateB, "%c%c%c%c%c%c%c%02d%c%02d", EFF_HSV_AH,0x00,0xff,0xff,0xff,0xff,0xff,h,':',m);

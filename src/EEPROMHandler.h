@@ -45,3 +45,13 @@ void eepromWriteChar(int address,char data){
 char eepromReadChar(int address){
   return EEPROM.readChar(address);
 }
+
+void eepromWriteInt(int address,int data){
+  EEPROM.writeInt(address,data);
+  EEPROM.commit();                            // save to EEPROM flash
+  delay(100);
+}
+
+int eepromReadInt(int address){
+  return EEPROM.readInt(address);
+}
