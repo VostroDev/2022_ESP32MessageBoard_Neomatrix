@@ -60,7 +60,7 @@ const char notfoundpage[] PROGMEM = R"=====(
     <div class="container">
       <div class="row">
         
-        <div class="col-md-6 align-self-center">
+        <div>
           <h1>404</h1>
           <h2>UH OH! You're lost.</h2>
           <p>The page you are looking for does not exist.

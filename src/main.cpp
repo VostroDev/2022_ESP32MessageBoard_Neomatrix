@@ -470,10 +470,13 @@ void loop()
         StaticgMsg.UpdateText();
         FastLED.show();
       }
-
-      dnsServer.processNextRequest();             // dns server
-      server.handleClient();                      // WIFI
-      delay(1000);                                // put this sequence in loop to reduce wifi waiting time
+    
+      for (size_t jj = 0; jj < 100; jj++)
+      {
+        dnsServer.processNextRequest();             // delay 1000ms total
+        server.handleClient();                      // WIFI and dns server request
+        delay(10);                                  // put this sequence in loop to reduce wifi waiting time
+      }
     }
   }
   else
