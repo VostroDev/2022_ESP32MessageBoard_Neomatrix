@@ -2,7 +2,7 @@
   30/12/2021
   Author: R WILSON
   Platforms: ESP32
-  Version: 1.0.1 - 30 DEC 2021
+  Version: 2.0.2 - 08 Jan 2022
   Language: C/C++/Arduino
   Working
   ----------------------------------------------------------------------------------------
@@ -37,8 +37,9 @@
 #include "timepicker.h"                     // HTML settings webpage with javascript
 #include "notfound.h"                       // HTML error 404 not found catch
 #include <WiFi.h>
-#include <WebServer.h>
-#include <DNSServer.h>
+#include <AsyncTCP.h>
+#include <ESPAsyncWebServer.h>
+#
 #include <ArduinoJson.h>
 
 #include <FastLED.h>
@@ -110,21 +111,17 @@ uint16_t h = 0;
 uint16_t m = 0;
 RTC_DS3231 RTC;
 
-const byte DNS_PORT = 53;
-
 IPAddress ip(192, 168, 4, 1);
 IPAddress subnet(255, 255, 255, 0);
 
-DNSServer dnsServer;
-WebServer server(80);
-
+AsyncWebServer server(80);
 DateTime now;                               // Decalre global variable for time
 char szTime[6];                             // hh:mm\0
 char daysOfTheWeek[7][4] = {"SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"};
 
-char curMessage[BUF_SIZE] = "Vostro Message Board ";
-char newMessage[BUF_SIZE] = "Vostro Message Board";
-char newTime[6] = "00:00";
+char curMessage[BUF_SIZE] = "Vostro";
+char newMessage[BUF_SIZE] = "Vostro";
+char newTime[17] = "01.01.2022 12:00";
 bool newMessageAvailable = true;
 bool newTimeAvailable = false;
 
@@ -132,65 +129,66 @@ cLEDMatrix<MATRIX_WIDTH, MATRIX_HEIGHT, MATRIX_TYPE> leds;
 
 cLEDText ScrollingMsg, StaticgMsg, RTCErrorMessage;
 
-CRGB fleds[256]; //!
+CRGB fleds[256];
 
 char txtDateA[] = { EFFECT_HSV_AH "\x00\xff\xff\xff\xff\xff" "12|30" };
 char txtDateB[] = { EFFECT_HSV_AH "\x00\xff\xff\xff\xff\xff" "12:30" };
 char szMesg[BUF_SIZE] = { EFFECT_FRAME_RATE "\x00" EFFECT_HSV_AH "\x00\xff\xff\xff\xff\xff" EFFECT_SCROLL_LEFT "     ESP32 MESSAGE BOARD BY R WILSON    "  EFFECT_CUSTOM_RC "\x01" };
 
-void handleTimeUpdate(){
-  Serial.println("handleTimeUpdate");
-  String data = server.arg("plain");
-  server.send(200, "text/json", "{\"status\" : \"ok\", \"time\" : \"" + data + "\"}"); // log to console
-  delay(100);
+String handleTimeUpdate(uint8_t *data, size_t len){
+  data[len] = '\0';
+  String json = (char*)data;
 
-  data.toCharArray(newTime, data.length() + 1);     // read new time
-  newTimeAvailable = (strlen(newTime) != 0);        // if not a blank field
+  for (int i = 0; i < len; i++) {
+    newTime[i]= data[i];
+  }
+  
+  if (data[0] == '\0'){ newTimeAvailable = false;}  // if not a blank field
+  else {newTimeAvailable = true;}
 
   Serial.print("new time: ");
-  Serial.println(data);
+  Serial.println(json);
+
+  return "{\"status\" : \"ok\", \"time\" : \"" + json + "\"}";
 }
 
-void handleMessageUpdate(){
-  Serial.println("handleMessageUpdate");
-  String json = server.arg("plain");
-  const size_t bufferSize = JSON_OBJECT_SIZE(2) + 350;      // Max message size buffer
+String handleMessageUpdate(uint8_t *data, size_t len){
+  data[len] = '\0';
+  String json = (char*)data;
   
-  DynamicJsonDocument doc(bufferSize);
+  DynamicJsonDocument doc(JSON_OBJECT_SIZE(2) + 350);
   DeserializationError error = deserializeJson(doc, json);  // Deserialize the JSON document
 
-  if (error)                                                // Test if parsing succeeds.
-  { 
+  if (error){                                                // Test if parsing succeeds.
     Serial.print(F("deserializeJson() failed: "));
     Serial.println(error.f_str());
-    return;
+    return "deserializeJson error";
   }
 
   BRIGHTNESS = int(doc["brightness"]);
-  const char *xmessage = doc["message"];
+  strcpy(newMessage, doc["message"]);
 
-  server.send(200, "text/plain", "brightness:" + String(BRIGHTNESS) + " message:" + String(xmessage)); // log OK to console
-  delay(100);
   Serial.print("message and brightness handle: ");
   Serial.println(json);
   
-  sprintf(newMessage, xmessage);
   newMessageAvailable = true;
+
+  return json;
 }
 
-void handleSettingsUpdate(){
-  Serial.println("handleSettingsUpdate");
-  String json = server.arg("plain");
-  const size_t bufferSize = JSON_OBJECT_SIZE(3) + 130;      // 130 XLarge buffer twice needed
+String handleSettingsUpdate(uint8_t *data, size_t len){
+  String returnstring;
 
-  DynamicJsonDocument doc(bufferSize);
+  data[len] = '\0';
+  String json = (char*)data;
+  
+  DynamicJsonDocument doc(JSON_OBJECT_SIZE(3) + 130);
   DeserializationError error = deserializeJson(doc, json);  // Deserialize the JSON document
 
-  if (error)                                                // Test if parsing succeeds.
-  { 
+  if (error){                                                // Test if parsing succeeds.
     Serial.print(F("deserializeJson() failed: "));
     Serial.println(error.f_str());
-    return;
+    return "deserializeJson error";
   }
 
   const char *oldpassword = doc["oldpassword"];
@@ -199,7 +197,7 @@ void handleSettingsUpdate(){
 
   if (String(oldpassword) == String(password) && String(newpassword) == String(renewpassword))
   {
-    server.send(200, "text/plain", "password:" + String(password) + " newpassword:" + String(newpassword) + " renewpassword:" + String(renewpassword)); // log OK to console
+    returnstring = "password:" + String(password) + " newpassword:" + String(newpassword) + " renewpassword:" + String(renewpassword);
     delay(100);
     Serial.print("password handle: ");
     Serial.println(json);
@@ -214,13 +212,14 @@ void handleSettingsUpdate(){
   }
   else
   {
-    server.send(200, "text/plain", "error, passwords don't match"); // log error to console
-    delay(100);
+    returnstring = "error, passwords don't match";
     Serial.print("password handle error: ");
     Serial.println(json);
     Serial.println("\nerror, passwords don't match\n");
     delay(1000);
   }
+
+  return returnstring;
 }
 
 void updateDefaultAPPassword(){
@@ -353,25 +352,47 @@ void setup()
   WiFi.softAPConfig(ip, ip, subnet);
   WiFi.softAP(ssid, password);
 
-  server.on("/",[](){server.send_P(200,"text/html", indexpage);});
-  server.on("/message", HTTP_POST, handleMessageUpdate);
+  server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
+    request->send(200, "text/html", indexpage);
+  });
+  server.on("/message", HTTP_POST, [](AsyncWebServerRequest * request){},NULL, 
+      [](AsyncWebServerRequest * request, uint8_t *data, size_t len, size_t index, size_t total) {
+          String myResponse = handleMessageUpdate(data,len);
+          request->send(200, "text/plain", myResponse);
+  });
 
-  server.on("/settings",[](){server.send_P(200,"text/html", settingspage);});
-  server.on("/settings/send", HTTP_POST, handleSettingsUpdate);
+  server.on("/settings", HTTP_GET, [](AsyncWebServerRequest *request){
+    request->send(200, "text/html", settingspage);
+  });
+  server.on("/settings/send", HTTP_POST, [](AsyncWebServerRequest * request){},NULL, 
+      [](AsyncWebServerRequest * request, uint8_t *data, size_t len, size_t index, size_t total) {
+          String myResponse = handleSettingsUpdate(data,len);
+          request->send(200, "text/plain", myResponse);
+  });
 
-  server.on("/time",[](){server.send_P(200,"text/html", timesetpage);});
-  server.on("/time/send", HTTP_POST, handleTimeUpdate);
+  server.on("/time", HTTP_GET, [](AsyncWebServerRequest *request){
+    request->send(200, "text/html", timesetpage);
+  });
+  server.on("/time/send", HTTP_POST, [](AsyncWebServerRequest * request){},NULL, 
+      [](AsyncWebServerRequest * request, uint8_t *data, size_t len, size_t index, size_t total) {
+          String myResponse = handleTimeUpdate(data,len);
+          request->send(200, "text/plain", myResponse);
+  });
 
-  server.on("/timepicker",[](){server.send_P(200,"text/html", timepickerpage);});
-  server.on("/timepicker/send", HTTP_POST, handleTimeUpdate);
+  server.on("/timepicker", HTTP_GET, [](AsyncWebServerRequest *request){
+    request->send(200, "text/html", timepickerpage);
+  });
+  server.on("/timepicker/send", HTTP_POST, [](AsyncWebServerRequest * request){},NULL, 
+      [](AsyncWebServerRequest * request, uint8_t *data, size_t len, size_t index, size_t total) {
+          String myResponse = handleTimeUpdate(data,len);
+          request->send(200, "text/plain", myResponse);
+  });
 
-  server.onNotFound([]() {server.send_P(200,"text/html", notfoundpage);});
 
-  dnsServer.setTTL(300);
-  dnsServer.setErrorReplyCode(DNSReplyCode::ServerFailure);
-  dnsServer.start(DNS_PORT, "www.message.com", ip);
-  Serial.println("DNS PORT: www.message.com");
-  
+  server.onNotFound([](AsyncWebServerRequest *request){
+    request->send(404, "text/html", notfoundpage); //! 404? was 200
+  });
+ 
   IPAddress myIP = WiFi.softAPIP();
   Serial.print("AP IP address: ");
   Serial.println(myIP);
@@ -409,9 +430,6 @@ void loop()
       updatetemp = 0;
     }
   }
-
-  dnsServer.processNextRequest();             // dns server
-  server.handleClient();                      // WIFI
 
   if (newMessageAvailable){
     strcpy(curMessage, newMessage);           // Copy new message to display
@@ -470,9 +488,6 @@ void loop()
         StaticgMsg.UpdateText();
         FastLED.show();
       }
-
-      dnsServer.processNextRequest();             // dns server
-      server.handleClient();                      // WIFI
       delay(1000);                                // put this sequence in loop to reduce wifi waiting time
     }
   }
