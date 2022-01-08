@@ -343,7 +343,7 @@ void setup()
   pinMode(LED_BUILTIN, OUTPUT);             // Heartbeat
   digitalWrite(LED_BUILTIN, LOW);
 
-  //  WIFI
+  //  WIFI 2
   Serial.print("\nWIFI >> Connecting to ");
   Serial.println(ssid);  
 
