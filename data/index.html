@@ -1,17 +1,12 @@
-// Parent: 2022_ESPMessageBoard_Neamatrix.cpp
-#include <pgmspace.h>
-
-const char indexpage[] PROGMEM = R"=====(
-
-  <!DOCTYPE html><html lang="en">
+<!DOCTYPE html><html lang="en">
   <head><meta charset="UTF-8" name="viewport" content="width=device-width, initial-scale=1, user-scalable=no"/>
-  <title>Message Board</title>
+    <title>Message Board</title>
   
     <style>
       #snackbar {
         visibility: hidden;
         min-width: 280px;
-        background-color: #333;
+        background-color: #5f5f5f;
         color: #fff;
         text-align: center;
         border-radius: 4px;
@@ -48,27 +43,40 @@ const char indexpage[] PROGMEM = R"=====(
         from {bottom: 30px; opacity: 1;}
         to {bottom: 0; opacity: 0;}
       }
-      h3{padding:5px;}
 
-      input{width:250px;padding:5px;font-size:1em;}
+      h3 {
+        padding:5px;
+      }
 
-      body{text-align: center;font-family:verdana;}
+      input {
+        width:250px;
+        padding:5px;
+        font-size:1em;
+        text-align:left;
+      }
+
+      body {
+        text-align: center;
+        font-family:verdana;
+        background-color: #2c3e50;
+      }
       
-      button{border:0;border-radius:0.3rem;
-          background-color:#1fa3ec;
-          color:#fff;
-          line-height:2.4rem;
-          font-size:1.2rem;
-          width:265px;}
-    </style>
-  
-    <style>
+      button {
+        border:0;
+        border-radius:0.3rem;
+        background-color:#1fa3ec;
+        color:#fff;
+        line-height:2.4rem;
+        font-size:1.2rem;
+        width:265px;
+      }
+
       ul {
         list-style-type: none;
         margin: 0;
         padding: 0;
         overflow: hidden;
-        background-color: #333;
+        background-color: #2c3e50;
       }
   
       li {
@@ -84,36 +92,40 @@ const char indexpage[] PROGMEM = R"=====(
       }
   
       li a:hover:not(.active) {
-        background-color: #111;
+        background-color: #1c2b3a;
       }
   
       .active {
         background-color: #1fa3ec;
       }
-    </style>
+        
+      #_brigtness {
+        font-size: 1.2em;
+        text-align: center;
+        font-family:verdana;
+        padding-bottom: 12px;
+        margin: 0;     
+      }
+      #_message { 
+        font-size: 1.2em;
+        text-align: center;
+        font-family:verdana;
+      }
 
-    <style>
-        *, *:before, *:after {
-        box-sizing: border-box;
-        }
-        #_brigtness{font-size: 1.2em;
-          text-align: center;
-          font-family:verdana;
-          padding-bottom: 12px;
-          margin: 0;     
-        }
-        #_message{font-size: 1.2em;
-          text-align: center;
-          font-family:verdana;
-        }
-        .range-slider {
-        /*position: relative;*/
+      #brightnessbox {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+      
+      .range-slider {
         display: inline-block;
         font-family: sans-serif;
         padding: 30px 10px 40px 10px;
         width:265px;
-        }
-        .range-slider__range {
+      }
+
+      .range-slider__range {
         -webkit-appearance: none;
         width: calc(100% - (73px));
         height: 10px;
@@ -122,8 +134,9 @@ const char indexpage[] PROGMEM = R"=====(
         outline: none;
         padding: 0;
         margin: 0;
-        }
-        .range-slider__range::-webkit-slider-thumb {
+      }
+
+      .range-slider__range::-webkit-slider-thumb {
         -webkit-appearance: none;
                 appearance: none;
         width: 20px;
@@ -133,14 +146,17 @@ const char indexpage[] PROGMEM = R"=====(
         cursor: pointer;
         -webkit-transition: background 0.15s ease-in-out;
         transition: background 0.15s ease-in-out;
-        }
-        .range-slider__range::-webkit-slider-thumb:hover {
+      }
+
+      .range-slider__range::-webkit-slider-thumb:hover {
         background: #1fa3ec;
-        }
-        .range-slider__range:active::-webkit-slider-thumb {
+      }
+
+      .range-slider__range:active::-webkit-slider-thumb {
         background: #1fa3ec;
-        }
-        .range-slider__range::-moz-range-thumb {
+      }
+
+      .range-slider__range::-moz-range-thumb {
         width: 20px;
         height: 20px;
         border: 0;
@@ -149,21 +165,24 @@ const char indexpage[] PROGMEM = R"=====(
         cursor: pointer;
         -moz-transition: background 0.15s ease-in-out;
         transition: background 0.15s ease-in-out;
-        }
-        .range-slider__range::-moz-range-thumb:hover {
-        background: #1fa3ec;
-        }
-        .range-slider__range:active::-moz-range-thumb {
-        background: #1fa3ec;
-        }
-        .range-slider__range:focus::-webkit-slider-thumb {
-        box-shadow: 0 0 0 3px #fff, 0 0 0 6px #1fa3ec;
-        }
+      }
 
-        .range-slider__value {
+      .range-slider__range::-moz-range-thumb:hover {
+        background: #1fa3ec;
+      }
+
+      .range-slider__range:active::-moz-range-thumb {
+        background: #1fa3ec;
+      }
+
+      .range-slider__range:focus::-webkit-slider-thumb {
+        box-shadow: 0 0 0 3px #fff, 0 0 0 6px #1fa3ec;
+      }
+
+      .range-slider__value {
         display: inline-block;
         position: relative;
-        width: 60px;
+        width: 40px;
         color: #fff;
         line-height: 20px;
         text-align: center;
@@ -171,8 +190,9 @@ const char indexpage[] PROGMEM = R"=====(
         background: #2c3e50;
         padding: 5px 10px;
         margin-left: 8px;
-        }
-        .range-slider__value:after {
+      }
+
+      .range-slider__value:after {
         position: absolute;
         top: 8px;
         left: -7px;
@@ -182,17 +202,52 @@ const char indexpage[] PROGMEM = R"=====(
         border-right: 7px solid #2c3e50;
         border-bottom: 7px solid transparent;
         content: "";
-        }
+      }
 
-        ::-moz-range-track {
+      ::-moz-range-track {
         background: #d7dcdf;
         border: 0;
-        }
+      }
 
-        input::-moz-focus-inner,
-        input::-moz-focus-outer {
+      input::-moz-focus-inner,
+      input::-moz-focus-outer {
         border: 0;
-        }
+      }
+
+      #container {
+        display:inline-block;
+        width:300px;
+        border-width: 2px;
+        border-color: #333333;
+        padding-left:10px;
+        padding-right:10px;
+        padding-top: 25px;
+        padding-bottom:25px;
+        border-style: solid;
+        border-radius:0.5rem;
+        margin-bottom: 45px;
+        text-align: center;
+        font-family:verdana;
+        font-weight: bold;
+        background-color: #fff;
+        min-height: 373px;
+      }
+
+      #signature {
+        position:absolute;
+        display:flex;
+        width: 300px;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        font-family:verdana;
+        font-size: 0.7rem;
+        font-weight: bold;
+        margin: 0px;
+        padding-top: 20px;
+        color:#2c3e50;
+        opacity: 0.8;
+      }
     </style>
   
     <script>
@@ -244,45 +299,49 @@ const char indexpage[] PROGMEM = R"=====(
         setTimeout(function(){ mySnack.className = mySnack.className.replace("show", ""); }, 3000);
     }
 
-      function rangeSlideRW(value) {
-          document.getElementById('rangeValueRW').innerHTML = value;
-      }
+    function rangeSlideRW(value) {
+        document.getElementById('rangeValueRW').innerHTML = value;
+    }
   </script>
   
   </head>
   
   <body >
-    <div style='display:inline-block;min-width:280px;'>
-      <ul>
-        <li><a class="active" href="">Message</a></li>
-        <li><a href="/time">Time</a></li>
-        <li><a href="/settings">Settings</a></li>
-      </ul>
-    </div>
-    <div>
-      <h3 id="_message">Enter Your New Message:</h3>
-      <form id="data_form" name="frmText">
-        <input maxlength="500" name="Message" type="text" placeholder='New Message'><br/><br/>
-      </form>
-    </div>
+    <div id="container">
+      <div id="msgbox">
+        <ul>
+          <li><a class="active" href="">Message</a></li>
+          <li><a href="/time">Time</a></li>
+          <li><a href="/settings">Settings</a></li>
+        </ul>
+      </div>
+      <div>
+        <h3 id="_message">Enter Your New Message:</h3>
+        <form id="data_form" name="frmText">
+          <input maxlength="500" name="Message" type="text" placeholder='New Message'><br/><br/>
+        </form>
+      </div>
 
-    <div class="range-slider">
+      <div class="range-slider">
         <h3 id="_brigtness">Brightness:</h3>
-        <input class="range-slider__range" id="myRange" type="range" value="30" min="0" max="254" oninput="rangeSlideRW(this.value)"  onmousemove="rangeSlideRW(this.value)"></Input>
-        <span id="rangeValueRW" class="range-slider__value">30</span>
-    </div>
+        <div id="brightnessbox"> 
+          <input class="range-slider__range" id="myRange" type="range" value="30" min="0" max="254" oninput="rangeSlideRW(this.value)"  onmousemove="rangeSlideRW(this.value)"></Input>
+          <span id="rangeValueRW" class="range-slider__value">30</span>
+        </div>
+      </div>
 
-    <div>
-      <button onclick="SendData()">send data</button>
-    </div>
+      <div>
+        <button onclick="SendData()">send data</button>
+      </div>
 
-    <div style='display:inline-block;min-width:280px;'>
-      <div id="snackbar">Display by. Vostro</div>
+      <div>
+        <p id="signature">Designed by: R Wilson 2022</p>
+      </div>
+
+      <div style='display:inline-block;min-width:280px;'>
+        <div id="snackbar">Display by. Vostro</div>
+      </div>
     </div>
-    
   </body>
   
-  </html>
-
-
-)=====";
+</html>

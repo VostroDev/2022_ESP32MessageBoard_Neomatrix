@@ -2,50 +2,50 @@
   30/12/2021
   Author: R WILSON
   Platforms: ESP32
-  Version: 2.0.2 - 08 Jan 2022
+  Version: 2.0.0 - 08 Jan 2022
   Language: C/C++/Arduino
   Working
   ----------------------------------------------------------------------------------------
   Description:
   ESP32 connected to NeoPixel WS2812B LED matrix display (32x8 - 4 Panels)
   MATRIX_TYPE      VERTICAL_MATRIX
-  RTC DS3231 I2C - SDA(21)gray    and SCL(22)purple
+  RTC DS3231 I2C - SDA(21)gray and SCL(22)purple
   TEMP SENSOR BUILD INTO DS3231
   ----------------------------------------------------------------------------------------
   Libraries:
   https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
   Adafruit RTC Lib: https://github.com/adafruit/RTClib              (lib version 2.0.2)
   ArduinoJson Benoit Blanchon: https://arduinojson.org              (lib version 6.18.5)
+  me-no-dev: https://github.com/me-no-dev/AsyncTCP
+  me-no-dev: https://github.com/me-no-dev/ESPAsyncWebServer
+  
   FastLED Daniel Garcia: https://fastled.io/                        (lib version
   LEDText A Liddiment https://github.com/AaronLiddiment/LEDText     (lib version 3.4.0)
   LEDMatrix A Liddiment https://github.com/AaronLiddiment/LEDMatrix (lib version )
     modified: J Skrotzky https://github.com/Jorgen-VikingGod/LEDMatrix Dec'21)
-  MTR Datepicker: http://mtrdesign.github.io/mtr-datepicker/
-  
+   
+  LOAD TO SPIFFS THESE EXTERNAL FILES:
+    >> index.html notfound.html settings.html time.html timepicker.html 
   Connect to ESP32MessageBoard WIFI AP created by ESP32  
-  Open browser to http://192.168.4.1/ or www.message.com
-  password 12345678 or password
+  Open browser to http://192.168.4.1/ or www.message.com !not working at this time
+  Open browser to http://1.2.3.4/ 
+  Password: 12345678 or password
   Enter message to be displayed on the NeoMatrix scrolling display
 ----------------------------------------------------------------------------------------*/
 
 #include <Arduino.h>
 #include <SPI.h>
-#include "EEPROMHandler.h"                  // Storing message into permanent memory
-#include "index.h"                          // HTML message  webpage with javascript
-#include "settings.h"                       // HTML settings webpage with javascript
-#include "timeset.h"                        // HTML settings webpage with javascript
-#include "timepicker.h"                     // HTML settings webpage with javascript
-#include "notfound.h"                       // HTML error 404 not found catch
-#include <WiFi.h>
-#include <AsyncTCP.h>
+#include <WiFi.h>                           // * for esp8266 use <ESP8266WiFi.h>
+#include <AsyncTCP.h>                       // * for esp8266 use <ESPAsyncTCP.h>
 #include <ESPAsyncWebServer.h>
-#
 #include <ArduinoJson.h>
+#include "EEPROMHandler.h"                  // Storing message into permanent memory
+#include "SPIFFS.h"
 
 #include <FastLED.h>
 #include <LEDMatrix.h>
 #include <LEDText.h>
-#include "FontRobert.h"                     // 5x7 font use <FontMatriseRW.h>
+#include "FontRobert.h"                     // for 5x7 font use <FontMatriseRW.h>
 
 #include <Wire.h>
 #include "RTClib.h"
@@ -55,21 +55,18 @@
 #define PASS_EXIST 450                      // password $ address
 #define PASS_BEGIN 460                      // password value stored
 #define P_CHAR     '`'
-
 #define BRT_BEGIN  505                      // Brightness value stored
 
 #define LED_BUILTIN 26
-
-#define LED_PIN 27
-#define VOLTS   5
-#define MAX_MA  400
-//#define BRIGHTNESS 30
+#define LED_PIN     27
+#define VOLTS       5
+#define MAX_MA      400
 
 #define MATRIX_WIDTH  32
 #define MATRIX_HEIGHT 8
 #define MATRIX_TYPE VERTICAL_MATRIX
 
-#define  EFF_CHAR_UP          0xd8          // for sprintf change EFFECT_CHAR_UP to EFF_CHAR_UP in loop
+#define  EFF_CHAR_UP          0xd8          // in sprintf change EFFECT_CHAR_UP to EFF_CHAR_UP in loop
 #define  EFF_CHAR_DOWN        0xd9
 #define  EFF_CHAR_LEFT        0xda
 #define  EFF_CHAR_RIGHT       0xdb
@@ -102,16 +99,16 @@
 
 int BRIGHTNESS = 30;
 
-int rc;                                      // custom return char for ledMatrix lib
+int rc;                                     // custom return char for ledMatrix lib
 
-char ssid[] = "ESP32MessageBoard";           // Change to your name
-char password[PASS_BSIZE] = "12345678";      // dont change password here, change using web app
+char ssid[] = "ESP32MessageBoard";          // Change to your name
+char password[PASS_BSIZE] = "12345678";     // dont change password here, change using web app
 
 uint16_t h = 0;
 uint16_t m = 0;
 RTC_DS3231 RTC;
 
-IPAddress ip(192, 168, 4, 1);
+IPAddress ip(1, 2, 3, 4);
 IPAddress subnet(255, 255, 255, 0);
 
 AsyncWebServer server(80);
@@ -126,7 +123,6 @@ bool newMessageAvailable = true;
 bool newTimeAvailable = false;
 
 cLEDMatrix<MATRIX_WIDTH, MATRIX_HEIGHT, MATRIX_TYPE> leds;
-
 cLEDText ScrollingMsg, StaticgMsg, RTCErrorMessage;
 
 CRGB fleds[256];
@@ -140,10 +136,10 @@ String handleTimeUpdate(uint8_t *data, size_t len){
   String json = (char*)data;
 
   for (int i = 0; i < len; i++) {
-    newTime[i]= data[i];
+    newTime[i] = data[i];
   }
   
-  if (data[0] == '\0'){ newTimeAvailable = false;}  // if not a blank field
+  if (data[0] == '\0'){ newTimeAvailable = false;}          // if not a blank field
   else {newTimeAvailable = true;}
 
   Serial.print("new time: ");
@@ -183,7 +179,7 @@ String handleSettingsUpdate(uint8_t *data, size_t len){
   String json = (char*)data;
   
   DynamicJsonDocument doc(JSON_OBJECT_SIZE(3) + 130);
-  DeserializationError error = deserializeJson(doc, json);  // Deserialize the JSON document
+  DeserializationError error = deserializeJson(doc, json);   // Deserialize the JSON document
 
   if (error){                                                // Test if parsing succeeds.
     Serial.print(F("deserializeJson() failed: "));
@@ -198,7 +194,6 @@ String handleSettingsUpdate(uint8_t *data, size_t len){
   if (String(oldpassword) == String(password) && String(newpassword) == String(renewpassword))
   {
     returnstring = "password:" + String(password) + " newpassword:" + String(newpassword) + " renewpassword:" + String(renewpassword);
-    delay(100);
     Serial.print("password handle: ");
     Serial.println(json);
     eepromWriteChar(BUF_SIZE, '\0');        // wall so message doesnt display password at max buffer pos
@@ -269,7 +264,7 @@ void rtcErrorHandler(){
   }
 }
 
-void fxSinlon() //!
+void fxSinlon() //* Startup effects
 {
   FastLED.addLeds<WS2812B,LED_PIN,GRB>(fleds, 250).setCorrection(TypicalLEDStrip);  //std fastled for effects
   FastLED.clear(true);
@@ -342,6 +337,12 @@ void setup()
   pinMode(LED_BUILTIN, OUTPUT);             // Heartbeat
   digitalWrite(LED_BUILTIN, LOW);
 
+  //  SPIFFS
+  if(!SPIFFS.begin(true)){
+      Serial.println("An Error has occurred while mounting SPIFFS");
+      return;
+  }
+
   //  WIFI 2
   Serial.print("\nWIFI >> Connecting to ");
   Serial.println(ssid);  
@@ -352,9 +353,8 @@ void setup()
   WiFi.softAPConfig(ip, ip, subnet);
   WiFi.softAP(ssid, password);
 
-  server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
-    request->send(200, "text/html", indexpage);
-  });
+
+  server.serveStatic("/", SPIFFS, "/").setDefaultFile("index.html");
   server.on("/message", HTTP_POST, [](AsyncWebServerRequest * request){},NULL, 
       [](AsyncWebServerRequest * request, uint8_t *data, size_t len, size_t index, size_t total) {
           String myResponse = handleMessageUpdate(data,len);
@@ -362,7 +362,7 @@ void setup()
   });
 
   server.on("/settings", HTTP_GET, [](AsyncWebServerRequest *request){
-    request->send(200, "text/html", settingspage);
+    request->send(SPIFFS, "/settings.html", "text/html");
   });
   server.on("/settings/send", HTTP_POST, [](AsyncWebServerRequest * request){},NULL, 
       [](AsyncWebServerRequest * request, uint8_t *data, size_t len, size_t index, size_t total) {
@@ -371,7 +371,7 @@ void setup()
   });
 
   server.on("/time", HTTP_GET, [](AsyncWebServerRequest *request){
-    request->send(200, "text/html", timesetpage);
+    request->send(SPIFFS, "/time.html", "text/html");
   });
   server.on("/time/send", HTTP_POST, [](AsyncWebServerRequest * request){},NULL, 
       [](AsyncWebServerRequest * request, uint8_t *data, size_t len, size_t index, size_t total) {
@@ -380,7 +380,7 @@ void setup()
   });
 
   server.on("/timepicker", HTTP_GET, [](AsyncWebServerRequest *request){
-    request->send(200, "text/html", timepickerpage);
+    request->send(SPIFFS, "/timepicker.html", "text/html");
   });
   server.on("/timepicker/send", HTTP_POST, [](AsyncWebServerRequest * request){},NULL, 
       [](AsyncWebServerRequest * request, uint8_t *data, size_t len, size_t index, size_t total) {
@@ -388,9 +388,8 @@ void setup()
           request->send(200, "text/plain", myResponse);
   });
 
-
   server.onNotFound([](AsyncWebServerRequest *request){
-    request->send(404, "text/html", notfoundpage); //! 404? was 200
+    request->send(SPIFFS, "/notfound.html", "text/html");
   });
  
   IPAddress myIP = WiFi.softAPIP();
@@ -401,7 +400,7 @@ void setup()
   Serial.println("SERVER STARTED");
 
   //  DISPLAY WELCOME MESSAGE
-  fxSinlon();                                 //! Display special startup effect
+  fxSinlon();                                 //* Display special startup effect
   while(ScrollingMsg.UpdateText() != 1)
   {
     FastLED.show();
@@ -424,8 +423,21 @@ void loop()
     m = now.minute();  
     h = now.hour();
 
-    updatetemp ++;                            // Update temperature every 10 sec, visual glitch
-    if(updatetemp > 10){
+    //txtDateA[7] = '2';// HRS//txtDateA[8] = '3';// HRS//txtDateA[10] = '5';// MIN//txtDateA[11] = '9';// MIN
+    sprintf(txtDateA, "%c%c%c%c%c%c%c%02d%c%02d", EFF_HSV_AH,0x00,0xff,0xff,0xff,0xff,0xff,h,'|',m);
+    sprintf(txtDateB, "%c%c%c%c%c%c%c%02d%c%02d", EFF_HSV_AH,0x00,0xff,0xff,0xff,0xff,0xff,h,':',m);
+
+    sprintf(szMesg, "%c%c%c%c%c%c%c%c%c%c%s%02d%c%02d%c%c%c%c%c%c%c%c%c%c%s%02d%c%c%c%c%c%c%c%c%c%c%s%s%c%c%c%c%c%c%c%c%c%s%02d%c%02d%c%c%c%c%s%c%c%c%c%c%c%c%c%c%c%s%s%s%c%c%c%c",
+                                    EFF_FRAME_RATE,0x00,EFF_HSV_AH,0x00,0xff,0xff,0xff,0xff,0xff,
+                                    EFF_SCROLL_LEFT,"     ",h,':',m,EFF_DELAY_FRAMES,0x00,0x3c,EFF_CUSTOM_RC,0x02,
+                                    EFF_RGB,0x00,0xc8,0x64,EFF_SCROLL_LEFT,"      ",t,'^',' ',EFF_DELAY_FRAMES,0x01,0x00,
+                                    EFF_RGB,0xd3,0x54,0x00,EFF_SCROLL_LEFT,"      ",daysOfTheWeek[now.dayOfTheWeek()],' ',EFF_DELAY_FRAMES,0x01,0x00,
+                                    EFF_RGB,0x00,0x80,0x80,EFF_SCROLL_LEFT,"     ",now.day(),'-',now.month(),EFF_DELAY_FRAMES,0x01,0x00,
+                                    EFF_SCROLL_LEFT,"     ",
+                                    EFF_HSV_AH,0x00,0xff,0xff,0xff,0xff,0xff,EFF_SCROLL_LEFT,EFF_FRAME_RATE,0x02,"    ",curMessage,"     ",EFF_FRAME_RATE,0x00,
+                                    EFF_CUSTOM_RC,0x01);
+                  
+    if(++updatetemp > 10){                    // Update temperature every 10 sec, visual glitch
       t = RTC.getTemperature();               // +or- from this for calibration
       updatetemp = 0;
     }
@@ -452,22 +464,6 @@ void loop()
     Serial.println("new time received, updated RTC");
   }
 
-  //txtDateA[7] = '2';// HRS//txtDateA[8] = '3';// HRS//txtDateA[10] = '5';// MIN//txtDateA[11] = '9';// MIN
-
-  sprintf(txtDateA, "%c%c%c%c%c%c%c%02d%c%02d", EFF_HSV_AH,0x00,0xff,0xff,0xff,0xff,0xff,h,'|',m);
-  sprintf(txtDateB, "%c%c%c%c%c%c%c%02d%c%02d", EFF_HSV_AH,0x00,0xff,0xff,0xff,0xff,0xff,h,':',m);
-
-  sprintf(szMesg, "%c%c%c%c%c%c%c%c%c%c%s%02d%c%02d%c%c%c%c%c%c%c%c%c%c%s%02d%c%c%c%c%c%c%c%c%c%c%s%s%c%c%c%c%c%c%c%c%c%s%02d%c%02d%c%c%c%c%s%c%c%c%c%c%c%c%c%c%c%s%s%s%c%c%c%c",
-                                  EFF_FRAME_RATE,0x00,EFF_HSV_AH,0x00,0xff,0xff,0xff,0xff,0xff,
-                                  EFF_SCROLL_LEFT,"     ",h,':',m,EFF_DELAY_FRAMES,0x00,0x3c,EFF_CUSTOM_RC,0x02,
-                                  EFF_RGB,0x00,0xc8,0x64,EFF_SCROLL_LEFT,"      ",t,'^',' ',EFF_DELAY_FRAMES,0x01,0x00,
-                                  EFF_RGB,0xd3,0x54,0x00,EFF_SCROLL_LEFT,"      ",daysOfTheWeek[now.dayOfTheWeek()],' ',EFF_DELAY_FRAMES,0x01,0x00,
-                                  EFF_RGB,0x00,0x80,0x80,EFF_SCROLL_LEFT,"     ",now.day(),'-',now.month(),EFF_DELAY_FRAMES,0x01,0x00,
-                                  EFF_SCROLL_LEFT,"     ",
-                                  EFF_HSV_AH,0x00,0xff,0xff,0xff,0xff,0xff,EFF_SCROLL_LEFT,EFF_FRAME_RATE,0x02,"    ",curMessage,"     ",EFF_FRAME_RATE,0x00,
-                                  EFF_CUSTOM_RC,0x01);
-
-
   rc = ScrollingMsg.UpdateText();
   if (rc == -1 || rc == 1)  // -1 means end of char array, 1 means end of msg because custom rc is received
   {
@@ -488,7 +484,7 @@ void loop()
         StaticgMsg.UpdateText();
         FastLED.show();
       }
-      delay(1000);                                // put this sequence in loop to reduce wifi waiting time
+      delay(1000);
     }
   }
   else
