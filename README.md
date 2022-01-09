@@ -34,7 +34,7 @@ Contributors names and contact info
 ## Version History
 
 * 1.0
-    * Initial Release
+    * Initial Release using default webserver
 * 1.1
     * Added brightness control
     
