@@ -55,3 +55,4 @@ All credit attributes of the various authors of the libraries used.
 * [LEDMatrix - A Liddiment](https://github.com/AaronLiddiment/LEDMatrix)
 * [me-no-dev - AsyncTCP](https://github.com/me-no-dev/AsyncTCP)
 * [me-no-dev - ESPAsyncWebServer](https://github.com/me-no-dev/ESPAsyncWebServer)
+* [Rui Santos - Information & tutorials](https://RandomNerdTutorials.com)
