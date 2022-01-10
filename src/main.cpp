@@ -129,7 +129,7 @@ CRGB fleds[256];
 
 char txtDateA[] = { EFFECT_HSV_AH "\x00\xff\xff\xff\xff\xff" "12|30" };
 char txtDateB[] = { EFFECT_HSV_AH "\x00\xff\xff\xff\xff\xff" "12:30" };
-char szMesg[BUF_SIZE] = { EFFECT_FRAME_RATE "\x00" EFFECT_HSV_AH "\x00\xff\xff\xff\xff\xff" EFFECT_SCROLL_LEFT "     ESP32 MESSAGE BOARD BY R WILSON    "  EFFECT_CUSTOM_RC "\x01" };
+char szMesg[BUF_SIZE] = { EFFECT_FRAME_RATE "\x00" EFFECT_HSV_AH "\x00\xff\xff\xff\xff\xff" EFFECT_SCROLL_LEFT "     ESP32 MESSAGE BOARD BY R WILSON     "  EFFECT_CUSTOM_RC "\x01" };
 
 String handleTimeUpdate(uint8_t *data, size_t len){
   data[len] = '\0';
@@ -391,6 +391,10 @@ void setup()
   server.onNotFound([](AsyncWebServerRequest *request){
     request->send(SPIFFS, "/notfound.html", "text/html");
   });
+
+  server.on("/favicon.ico", HTTP_GET, [](AsyncWebServerRequest *request){
+    request->send(SPIFFS, "/favicon.png", "image/png");
+  });
  
   IPAddress myIP = WiFi.softAPIP();
   Serial.print("AP IP address: ");
@@ -477,13 +481,12 @@ void loop()
         StaticgMsg.SetText((unsigned char *)txtDateA, sizeof(txtDateA) - 1);
         StaticgMsg.UpdateText();
         leds.DrawLine(0, 0, 0, 7, CRGB(0, 0, 0)); // blank column 1, due to visual glitch text shifting << 1 pixel
-        FastLED.show();
       }
       else{
         StaticgMsg.SetText((unsigned char *)txtDateB, sizeof(txtDateB) - 1);
         StaticgMsg.UpdateText();
-        FastLED.show();
       }
+      FastLED.show();
       delay(1000);
     }
   }
