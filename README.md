@@ -13,7 +13,10 @@ The time and message can be set using the build in webserver.
 ## Getting Started
 Project build with Visual Studio Code and PlatformIO.
 
-![Matrix Display](https://github.com/VostroDev/2022_ESP32MessageBoard_Neomatrix/blob/master/doc/matrix.png)
+Click the image below to watch the video.
+
+[![YouTube](http://img.youtube.com/vi/KXobKjZ4cho/0.jpg)](https://www.youtube.com/watch?v=KXobKjZ4cho "Dot Matrix Clock")
+
 
 ![Web Server](https://github.com/VostroDev/2022_ESP32MessageBoard_Neomatrix/blob/V2.0/docs/webserver_v2.png)
 
