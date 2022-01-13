@@ -1,5 +1,5 @@
 /*----------------------------------------------------------------------------------------
-  Platforms: ESP32
+  Platforms: ESP32  (for ESP8266 use old version of the EEPROMHandler)
   Language: C/C++/Arduino
   File: EEPROMHandler.h
   Parent: 2022_ESPMessageBoard_Neamatrix.cpp
@@ -17,7 +17,7 @@ void eepromWriteString(int address,String data){
   for(i=0;i<_size;i++){
     EEPROM.writeChar(address+i,data[i]);
   }
-  EEPROM.writeChar(address+_size,'\0');           // Add termination null character for String Data
+  EEPROM.writeChar(address+_size,'\0');       // Add termination null character for String Data
   EEPROM.commit();                            // save to EEPROM flash
   delay(100);
 }
@@ -27,7 +27,7 @@ String eepromReadString(int address, int16_t buffer_size){
   int len=0;
   unsigned char k;
   k=EEPROM.readChar(address);
-  while(k != '\0' && len<buffer_size){         // Read until null character
+  while(k != '\0' && len<buffer_size){        // Read until null character
     k=EEPROM.readChar(address+len);
     data[len]=k;
     len++;

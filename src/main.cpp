@@ -18,6 +18,7 @@
   ArduinoJson Benoit Blanchon: https://arduinojson.org              (lib version 6.18.5)
   me-no-dev: https://github.com/me-no-dev/AsyncTCP
   me-no-dev: https://github.com/me-no-dev/ESPAsyncWebServer
+  Rui Santos: https://RandomNerdTutorials.com - information resource
   
   FastLED Daniel Garcia: https://fastled.io/                        (lib version
   LEDText A Liddiment https://github.com/AaronLiddiment/LEDText     (lib version 3.4.0)
@@ -60,7 +61,7 @@
 #define LED_BUILTIN 26
 #define LED_PIN     27
 #define VOLTS       5
-#define MAX_MA      400
+#define MAX_MA      3000
 
 #define MATRIX_WIDTH  32
 #define MATRIX_HEIGHT 8
@@ -299,7 +300,7 @@ void setup()
   Serial.println(curMessage);
 
   BRIGHTNESS = eepromReadInt(BRT_BEGIN);                          // read Neomatrix brightness value
-  if(BRIGHTNESS > 254) { BRIGHTNESS = 30;}
+  if(BRIGHTNESS > 255) { BRIGHTNESS = 255;}
   Serial.print("NeoMatrix Brightness set to ");                   // done in line 318
   Serial.println(BRIGHTNESS);
   
@@ -411,6 +412,9 @@ void setup()
     delay(30);
   }
   ScrollingMsg.SetText((unsigned char *)szMesg, sizeof(szMesg) - 1);   // reset to start of string
+
+
+  //Serial.println(TIMER_BASE_CLK);
 }
 
 void loop()
