@@ -45,6 +45,8 @@ Contributors names and contact info
 * 2.0
     * Moved to AsyncWebserver with SPIFFS
     * Minor visual update
+* 2.0
+    * Webpage updates
     
 ## Acknowledgments
 
