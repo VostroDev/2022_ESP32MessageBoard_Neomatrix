@@ -3,10 +3,17 @@
     <title>Message Board</title>
   
     <style>
+      :root {
+        --clr-neon: hsl(317 100% 54%);
+        --clr-bg: hsl(323 21% 16%);  
+        --clr-old-bg: #2c3e50;
+
+      }
+
       #snackbar {
         visibility: hidden;
         min-width: 280px;
-        background-color: #4d5966;
+        background-color: #5f5f5f;
         color: #fff;
         text-align: center;
         border-radius: 4px;
@@ -52,7 +59,6 @@
 
       h3 {
         padding:5px;
-        color: #2c3e50;
       }
 
       input {
@@ -61,100 +67,89 @@
         font-size:1em;
         text-align:left;
       }
-   
-      button {
-        border:0;
-        border-radius:0.3rem;
-        color:#fff;
-        line-height:2.4rem;
-        font-size:1.2rem;
-        width:265px;
-        background: linear-gradient(45deg,#5ddcff, #3c67e3, #4e00c2,#764ab9,#77156f,#e903ca,#c22856,#a5304d);
-        background-size: 800% 100%;
-        animation: gradient 20s linear infinite;
-        animation-direction: alternate;
-      }
-
-      @property --rotate {
-        syntax: "<angle>";
-        initial-value: 132deg;
-        inherits: false;
-      }
-
-      :root {
-        --card-height: 65vh;
-        --card-width: calc(var(--card-height) / 1.5);
-      }
 
       body {
         text-align: center;
         font-family:verdana;
         background-color: #2c3e50;
+
+        background: var(--clr-bg);
+        color: var(--clr-bg);
+      }
+      
+      button {
+        /* border:0; */
+        /* border-radius:0.3rem; */
+                                 /* background-color:#1fa3ec; */
+        /* color:#fff; */
+        /* line-height:2.4rem; */
+        /* font-size:1.2rem; */
+        /* width:265px; */
+        /* background: linear-gradient(45deg,#F17C58, #E94584, #24AADB , #27DBB1,#FFDC18, #FF3706); */
+        /* background-size: 600% 100%; */
+                                  /* animation: gradient 16s linear infinite; */
+        /* animation: gradient 15s ease infinite; */
+        /* animation-direction: alternate; */
       }
 
-      .card {
-        background: #fff;
-        display:inline-block;
-        width:300px;
-        font-family:verdana;
-        font-weight: bold;
-        min-height: 373px;
-        padding-left:10px;
-        padding-right:10px;
-        padding-top: 25px;
-        padding-bottom:25px;
+      .neon-button {
+        border: 0px;
+        border-width: 0px;
+        border-radius: 0.3em;
+        color:#fff;
+        font-size: 1.2rem;
+        line-height:2.4rem;
+        display: inline-block;
+        cursor: pointer;
+        text-decoration: none;
+
+        background: linear-gradient(45deg,#F17C58, #E94584, #24AADB , #27DBB1,#FFDC18, #FF3706);
+        background-size: 600% 100%;
+                                  /* animation: gradient 16s linear infinite; */
+        animation: gradient 15s ease infinite;
+        animation-direction: alternate;
+
+        
+        width:265px;
+        text-shadow: 0 0 0.125em hsl(0 0% 100% / 0.3), 0 0 0.45em currentColor;
         position: relative;
-        border-radius: 6px;
-        justify-content: center;
-        align-items: center;
-        text-align: center;
-        margin-bottom: 45px;
-        color: #2c3e50;
       }
 
-      .card::before {
+      .neon-button::before {
+        pointer-events: none;
         content: "";
-        width: 104%;
-        height: 102%;
-        border-radius: 8px;
-        background-image: linear-gradient(
-          var(--rotate)
-          , #5ddcff, #3c67e3, #4e00c2,#764ab9,#77156f,#e903ca,#c22856,#a5304d);
         position: absolute;
-        z-index: -1;
-        top: -1%;
-        left: -2%;
-        animation: spin 5s linear infinite;
-      }
-
-      .card::after {
-        position: absolute;
-        content: "";
-        top: calc(var(--card-height) / 6);
+        background: linear-gradient(45deg,#F17C58, #E94584, #24AADB , #27DBB1,#FFDC18, #FF3706);
+        top: 200%;
         left: 0;
-        right: 0;
-        z-index: -1;
-        height: 100%;
         width: 100%;
-        margin: 0 auto;
-        transform: scale(0.8);
-        filter: blur(calc(var(--card-height) / 6));
-        background-image: linear-gradient(
-          var(--rotate)
-          , #5ddcff, #3c67e3, #4e00c2,#764ab9,#77156f,#e903ca,#c22856,#a5304d);
-        opacity: 1;
-        transition: opacity .5s;
-        animation: spin 5s linear infinite;
+        height: 100%;
+
+        transform: perspective(1em) rotateX(40deg) scale(1, 0.35);
+        filter: blur(1em);
+        opacity: 0.7;
       }
 
-      @keyframes spin {
-        0% {
-          --rotate: 0deg;
-        }
-        100% {
-          --rotate: 360deg;
-        }
+      .neon-button::after {
+        content: "";
+
       }
+
+      .neon-button:hover,
+      .neon-button:focus {
+        /* color: var(--clr-bg); */
+        text-shadow: none;
+      }
+
+      .neon-button:hover::before,
+      .neon-button:focus::before {
+        opacity: 1;
+      }
+      .neon-button:hover::after,
+      .neon-button:focus::after {
+        opacity: 1;
+      }
+
 
       ul {
         list-style-type: none;
@@ -181,9 +176,10 @@
       }
   
       .active {
-        background: linear-gradient(45deg,#5ddcff, #3c67e3, #4e00c2,#764ab9,#77156f,#e903ca,#c22856,#a5304d);
-        background-size: 800% 100%;
-        animation: gradient 20s linear infinite;
+        /* background-color: #1fa3ec; */
+        background: linear-gradient(45deg,#F17C58, #E94584, #24AADB , #27DBB1,#FFDC18, #FF3706);
+        background-size: 600% 100%;
+        animation: gradient 15s ease infinite;
         animation-direction: alternate;
       }
         
@@ -302,6 +298,32 @@
         border: 0;
       }
 
+      #container {
+        display:inline-block;
+        width:300px;
+        border-width: 0px;
+        border-color: #333333;
+        padding-left:10px;
+        padding-right:10px;
+        padding-top: 25px;
+        padding-bottom:25px;
+        border-style: none;
+        border-radius:0.5rem;
+        margin-bottom: 45px;
+        text-align: center;
+        font-family:verdana;
+        font-weight: bold;
+        background-color: #fff;
+        min-height: 373px;
+        box-shadow:
+          5.4px 4.2px 2.2px rgba(0, 0, 0, 0.024),
+          10.4px 8.1px 5.3px rgba(0, 0, 0, 0.033),
+          16px 12.4px 10px rgba(0, 0, 0, 0.039),
+          24.7px 19.2px 17.9px rgba(0, 0, 0, 0.044),
+          43.2px 33.5px 33.4px rgba(0, 0, 0, 0.052),
+          98px 76px 80px rgba(0, 0, 0, 0.07);
+      }
+
       #signature {
         position:absolute;
         display:flex;
@@ -378,7 +400,7 @@
   <body >
 
     <section class="wrapper">
-      <div class="card">
+      <div id="container">
         <div id="msgbox">
           <ul>
             <li><a class="active" href="">Message</a></li>
