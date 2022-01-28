@@ -63,8 +63,8 @@
 #define VOLTS       5
 #define MAX_MA      3000
 
-#define MATRIX_WIDTH  32
-#define MATRIX_HEIGHT 8
+#define MATRIX_WIDTH  -32
+#define MATRIX_HEIGHT -8
 #define MATRIX_TYPE VERTICAL_MATRIX
 
 #define  EFF_CHAR_UP          0xd8          // in sprintf change EFFECT_CHAR_UP to EFF_CHAR_UP in loop
@@ -307,7 +307,7 @@ void setup()
   
   //  START DISPLAY
   Serial.println("\nNEOMATRIX DIPLAY STARTED");
-  FastLED.setMaxPowerInVoltsAndMilliamps(VOLTS, MAX_MA);
+  //! FastLED.setMaxPowerInVoltsAndMilliamps(VOLTS, MAX_MA);
   FastLED.addLeds<WS2812B, LED_PIN, GRB>(leds[0], leds.Size()).setCorrection(TypicalLEDStrip); //TypicalSMD5050
   FastLED.setBrightness(BRIGHTNESS);
   FastLED.clear(true);
@@ -437,12 +437,12 @@ void loop()
 
     sprintf(szMesg, "%c%c%c%c%c%c%c%c%c%c%s%02d%c%02d%c%c%c%c%c%c%c%c%c%c%s%02d%c%c%c%c%c%c%c%c%c%c%s%s%c%c%c%c%c%c%c%c%c%s%02d%c%02d%c%c%c%c%s%c%c%c%c%c%c%c%c%c%c%s%s%s%c%c%c%c",
                                     EFF_FRAME_RATE,0x00,EFF_HSV_AH,0x00,0xff,0xff,0xff,0xff,0xff,
-                                    EFF_SCROLL_LEFT,"     ",h,':',m,EFF_DELAY_FRAMES,0x00,0x3c,EFF_CUSTOM_RC,0x02,
-                                    EFF_RGB,0x00,0xc8,0x64,EFF_SCROLL_LEFT,"      ",t,'^',' ',EFF_DELAY_FRAMES,0x01,0x00,
-                                    EFF_RGB,0xd3,0x54,0x00,EFF_SCROLL_LEFT,"      ",daysOfTheWeek[now.dayOfTheWeek()],' ',EFF_DELAY_FRAMES,0x01,0x00,
-                                    EFF_RGB,0x00,0x80,0x80,EFF_SCROLL_LEFT,"     ",now.day(),'-',now.month(),EFF_DELAY_FRAMES,0x01,0x00,
+                                    EFF_SCROLL_LEFT,"     ",h,':',m,EFF_DELAY_FRAMES,0x00,0x2c,EFF_CUSTOM_RC,0x02,
+                                    EFF_RGB,0x00,0xc8,0x64,EFF_SCROLL_LEFT,"      ",t,'^',' ',EFF_DELAY_FRAMES,0x00,0xee,
+                                    EFF_RGB,0xd3,0x54,0x00,EFF_SCROLL_LEFT,"      ",daysOfTheWeek[now.dayOfTheWeek()],' ',EFF_DELAY_FRAMES,0x00,0xee,
+                                    EFF_RGB,0x00,0x80,0x80,EFF_SCROLL_LEFT,"     ",now.day(),'-',now.month(),EFF_DELAY_FRAMES,0x00,0xee,
                                     EFF_SCROLL_LEFT,"     ",
-                                    EFF_HSV_AH,0x00,0xff,0xff,0xff,0xff,0xff,EFF_SCROLL_LEFT,EFF_FRAME_RATE,0x02,"    ",curMessage,"     ",EFF_FRAME_RATE,0x00,
+                                    EFF_HSV_AH,0x00,0xff,0xff,0xff,0xff,0xff,EFF_SCROLL_LEFT,EFF_FRAME_RATE,0x02," ",curMessage,"     ",EFF_FRAME_RATE,0x00,
                                     EFF_CUSTOM_RC,0x01);
                   
     if(++updatetemp > 10){                    // Update temperature every 10 sec, visual glitch
