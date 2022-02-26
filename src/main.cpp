@@ -9,7 +9,7 @@
   Description:
   ESP32 connected to NeoPixel WS2812B LED matrix display (32x8 - 4 Panels)
   MATRIX_TYPE      VERTICAL_MATRIX
-  RTC DS3231 I2C - SDA(21)gray and SCL(22)purple
+  RTC DS3231 I2C - SDA(21)gray/orange and SCL(22)purple/yellow
   TEMP SENSOR BUILD INTO DS3231
   ----------------------------------------------------------------------------------------
   Libraries:
@@ -102,8 +102,8 @@ int BRIGHTNESS = 30;
 
 int rc;                                     // custom return char for ledMatrix lib
 
-char ssid[] = "ESP32MessageBoard";          // Change to your name
-char password[PASS_BSIZE] = "12345678";     // dont change password here, change using web app
+char ssid[] = "MessageBoardESP32";          // Change to your name
+char password[PASS_BSIZE] = "password";     // dont change password here, change using web app
 
 uint16_t h = 0;
 uint16_t m = 0;
