@@ -51,12 +51,12 @@
 #include <Wire.h>
 #include "RTClib.h"
 
-#define BUF_SIZE   400                      // 400 out of 512 used
-#define PASS_BSIZE 40                       // 40 out of 512 used
-#define PASS_EXIST 450                      // password $ address
-#define PASS_BEGIN 460                      // password value stored
-#define P_CHAR     '`'
-#define BRT_BEGIN  505                      // Brightness value stored
+#define BUF_SIZE    400                     // 400 out of 512 used
+#define PASS_BSIZE  9                       // 8 digit password
+#define PASS_EXIST  405                     // password $ address
+#define PASS_BEGIN  410                     // password value stored
+#define P_CHAR      '`'
+#define BRT_BEGIN   425                     // Brightness value stored (int = 4Bytes)
 
 #define LED_BUILTIN 26
 #define LED_PIN     27
@@ -67,36 +67,36 @@
 #define MATRIX_HEIGHT -8
 #define MATRIX_TYPE VERTICAL_MATRIX
 
-#define  EFF_CHAR_UP          0xd8          // in sprintf change EFFECT_CHAR_UP to EFF_CHAR_UP in loop
-#define  EFF_CHAR_DOWN        0xd9
-#define  EFF_CHAR_LEFT        0xda
-#define  EFF_CHAR_RIGHT       0xdb
+#define EFF_CHAR_UP          0xd8          // in sprintf change 
+#define EFF_CHAR_DOWN        0xd9          // EFFECT_CHAR_UP to EFF_CHAR_UP in loop
+#define EFF_CHAR_LEFT        0xda
+#define EFF_CHAR_RIGHT       0xdb
 
-#define  EFF_SCROLL_LEFT      0xdc
-#define  EFF_SCROLL_RIGHT     0xdd
-#define  EFF_SCROLL_UP        0xde
-#define  EFF_SCROLL_DOWN      0xdf
+#define EFF_SCROLL_LEFT      0xdc
+#define EFF_SCROLL_RIGHT     0xdd
+#define EFF_SCROLL_UP        0xde
+#define EFF_SCROLL_DOWN      0xdf
 
-#define  EFF_RGB              0xe0
-#define  EFF_HSV              0xe1
-#define  EFF_RGB_CV           0xe2
-#define  EFF_HSV_CV           0xe3
-#define  EFF_RGB_AV           0xe6
-#define  EFF_HSV_AV           0xe7
-#define  EFF_RGB_CH           0xea
-#define  EFF_HSV_CH           0xeb
-#define  EFF_RGB_AH           0xee
-#define  EFF_HSV_AH           0xef
-#define  EFF_COLR_EMPTY       0xf0
-#define  EFF_COLR_DIMMING     0xf1
+#define EFF_RGB              0xe0
+#define EFF_HSV              0xe1
+#define EFF_RGB_CV           0xe2
+#define EFF_HSV_CV           0xe3
+#define EFF_RGB_AV           0xe6
+#define EFF_HSV_AV           0xe7
+#define EFF_RGB_CH           0xea
+#define EFF_HSV_CH           0xeb
+#define EFF_RGB_AH           0xee
+#define EFF_HSV_AH           0xef
+#define EFF_COLR_EMPTY       0xf0
+#define EFF_COLR_DIMMING     0xf1
 
-#define  EFF_BACKGND_ERASE    0xf4
-#define  EFF_BACKGND_LEAVE    0xf5
-#define  EFF_BACKGND_DIMMING  0xf6
+#define EFF_BACKGND_ERASE    0xf4
+#define EFF_BACKGND_LEAVE    0xf5
+#define EFF_BACKGND_DIMMING  0xf6
 
-#define  EFF_FRAME_RATE       0xf8
-#define  EFF_DELAY_FRAMES     0xf9
-#define  EFF_CUSTOM_RC        0xfa
+#define EFF_FRAME_RATE       0xf8
+#define EFF_DELAY_FRAMES     0xf9
+#define EFF_CUSTOM_RC        0xfa
 
 int BRIGHTNESS = 30;
 
