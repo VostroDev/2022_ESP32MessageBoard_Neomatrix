@@ -435,15 +435,25 @@ void loop()
     sprintf(txtDateA, "%c%c%c%c%c%c%c%02d%c%02d", EFF_HSV_AH,0x00,0xff,0xff,0xff,0xff,0xff,h,'|',m);
     sprintf(txtDateB, "%c%c%c%c%c%c%c%02d%c%02d", EFF_HSV_AH,0x00,0xff,0xff,0xff,0xff,0xff,h,':',m);
 
-    sprintf(szMesg, "%c%c%c%c%c%c%c%c%c%c%s%02d%c%02d%c%c%c%c%c%c%c%c%c%c%s%02d%c%c%c%c%c%c%c%c%c%c%s%s%c%c%c%c%c%c%c%c%c%s%02d%c%02d%c%c%c%c%s%c%c%c%c%c%c%c%c%c%c%s%s%s%c%c%c%c",
-                                    EFF_FRAME_RATE,0x00,EFF_HSV_AH,0x00,0xff,0xff,0xff,0xff,0xff,
-                                    EFF_SCROLL_LEFT,"     ",h,':',m,EFF_DELAY_FRAMES,0x00,0x2c,EFF_CUSTOM_RC,0x02,
-                                    EFF_RGB,0x00,0xc8,0x64,EFF_SCROLL_LEFT,"      ",t,'^',' ',EFF_DELAY_FRAMES,0x00,0xee,
-                                    EFF_RGB,0xd3,0x54,0x00,EFF_SCROLL_LEFT,"      ",daysOfTheWeek[now.dayOfTheWeek()],' ',EFF_DELAY_FRAMES,0x00,0xee,
-                                    EFF_RGB,0x00,0x80,0x80,EFF_SCROLL_LEFT,"     ",now.day(),'-',now.month(),EFF_DELAY_FRAMES,0x00,0xee,
-                                    EFF_SCROLL_LEFT,"     ",
-                                    EFF_HSV_AH,0x00,0xff,0xff,0xff,0xff,0xff,EFF_SCROLL_LEFT,EFF_FRAME_RATE,0x02," ",curMessage,"     ",EFF_FRAME_RATE,0x00,
-                                    EFF_CUSTOM_RC,0x01);
+    if(curMessage[0] == '\0'){  // when no message
+      sprintf(szMesg, "%c%c%c%c%c%c%c%c%c%c%s%02d%c%02d%c%c%c%c%c%c%c%c%c%s%02d%c%c%c%c%c%c%c%c%c%s%s%c%c%c%c%c%c%c%c%s%02d%c%02d%c%c%c%s%c%c",
+                        EFF_FRAME_RATE,0x00,EFF_HSV_AH,0x00,0xff,0xff,0xff,0xff,0xff,
+                        EFF_SCROLL_LEFT,"     ",h,':',m,EFF_DELAY_FRAMES,0x00,0x2c,EFF_CUSTOM_RC,0x02,
+                        EFF_RGB,0x00,0xc8,0x64,"      ",t,'^',' ',EFF_DELAY_FRAMES,0x00,0xee,
+                        EFF_RGB,0xd3,0x54,0x00,"      ",daysOfTheWeek[now.dayOfTheWeek()],' ',EFF_DELAY_FRAMES,0x00,0xee,
+                        EFF_RGB,0x00,0x80,0x80,"      ",now.day(),'-',now.month(),EFF_DELAY_FRAMES,0x00,0xee,"      ",
+                        EFF_CUSTOM_RC,0x01);
+    }
+    else{
+      sprintf(szMesg, "%c%c%c%c%c%c%c%c%c%c%s%02d%c%02d%c%c%c%c%c%c%c%c%c%s%02d%c%c%c%c%c%c%c%c%c%s%s%c%c%c%c%c%c%c%c%s%02d%c%02d%c%c%c%s%c%c%c%c%c%c%c%c%c%s%s%c%c%c%c",
+                        EFF_FRAME_RATE,0x00,EFF_HSV_AH,0x00,0xff,0xff,0xff,0xff,0xff,
+                        EFF_SCROLL_LEFT,"     ",h,':',m,EFF_DELAY_FRAMES,0x00,0x2c,EFF_CUSTOM_RC,0x02,
+                        EFF_RGB,0x00,0xc8,0x64,"      ",t,'^',' ',EFF_DELAY_FRAMES,0x00,0xee,
+                        EFF_RGB,0xd3,0x54,0x00,"      ",daysOfTheWeek[now.dayOfTheWeek()],' ',EFF_DELAY_FRAMES,0x00,0xee,
+                        EFF_RGB,0x00,0x80,0x80,"      ",now.day(),'-',now.month(),EFF_DELAY_FRAMES,0x00,0xee,
+                        "      ",EFF_HSV_AH,0x00,0xff,0xff,0xff,0xff,0xff,EFF_FRAME_RATE,0x02,curMessage,"     ",EFF_FRAME_RATE,0x00,
+                        EFF_CUSTOM_RC,0x01);
+    }
                   
     if(++updatetemp > 10){                    // Update temperature every 10 sec, visual glitch
       t = RTC.getTemperature();               // +or- from this for calibration
