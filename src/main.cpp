@@ -2,7 +2,7 @@
   30/12/2021
   Author: R WILSON
   Platforms: ESP32
-  Version: 2.0.0 - 08 Jan 2022
+  Version: 3.0.0 - 08 Mar 2022
   Language: C/C++/Arduino
   Working
   ----------------------------------------------------------------------------------------
@@ -98,6 +98,10 @@
 #define EFF_DELAY_FRAMES     0xf9
 #define EFF_CUSTOM_RC        0xfa
 
+#define BUZZER_PIN 23
+
+TaskHandle_t TaskHandle_1;
+
 int BRIGHTNESS = 30;
 
 int rc;                                     // custom return char for ledMatrix lib
@@ -107,7 +111,9 @@ char password[PASS_BSIZE] = "password";     // dont change password here, change
 
 uint16_t h = 0;
 uint16_t m = 0;
+uint16_t dow = 0;
 RTC_DS3231 RTC;
+byte lastAlarm = 254;
 
 IPAddress ip(1, 2, 3, 4);
 IPAddress subnet(255, 255, 255, 0);
@@ -284,12 +290,128 @@ void fxSinlon() //* Startup effects
   FastLED.setBrightness(BRIGHTNESS);
 }
 
+static void MyTask1(void* pvParameters)
+{
+  for (int i = 0; i < 6; i++)
+  {
+    digitalWrite(BUZZER_PIN, HIGH);
+    vTaskDelay(200/portTICK_PERIOD_MS);
+    digitalWrite(BUZZER_PIN, LOW);
+    vTaskDelay(200/portTICK_PERIOD_MS);
+  }
+  vTaskDelete(TaskHandle_1);    // Delete the task using the TaskHandle_1
+}
+
+void alarmCheck()
+{
+  if(dow > 0 && dow < 5)
+  {
+    if(h == 8 && m == 0 && lastAlarm != 0)
+    {
+      /* Task function, name, stackSize, parameter, priority, handler, core 0 */   
+      xTaskCreatePinnedToCore(MyTask1,"Task1",10000,NULL,1,&TaskHandle_1,0);  
+      lastAlarm = 0;
+      return;
+    }
+    if(h == 10 && m == 0 && lastAlarm != 1)
+    {
+      xTaskCreatePinnedToCore(MyTask1,"Task1",10000,NULL,1,&TaskHandle_1,0);  
+      lastAlarm = 1;
+      return;
+    }
+    if(h == 10 && m == 20 && lastAlarm != 2)
+    {
+      xTaskCreatePinnedToCore(MyTask1,"Task1",10000,NULL,1,&TaskHandle_1,0);  
+      lastAlarm = 2;
+      return;
+    }
+    if(h == 12 && m == 20 && lastAlarm != 3)
+    {
+      xTaskCreatePinnedToCore(MyTask1,"Task1",10000,NULL,1,&TaskHandle_1,0);  
+      lastAlarm = 3;
+      return;
+    }
+    if(h == 13 && m == 0 && lastAlarm != 4)
+    {
+      xTaskCreatePinnedToCore(MyTask1,"Task1",10000,NULL,1,&TaskHandle_1,0);  
+      lastAlarm = 4;
+      return;
+    }
+    if(h == 14 && m == 20 && lastAlarm != 5)
+    {
+      xTaskCreatePinnedToCore(MyTask1,"Task1",10000,NULL,1,&TaskHandle_1,0);  
+      lastAlarm = 5;
+      return;
+    }
+    if(h == 14 && m == 40 && lastAlarm != 6)
+    {
+      xTaskCreatePinnedToCore(MyTask1,"Task1",10000,NULL,1,&TaskHandle_1,0);  
+      lastAlarm = 6;
+      return;
+    }
+    if(h == 15 && m == 00 && lastAlarm != 7)
+    {
+      xTaskCreatePinnedToCore(MyTask1,"Task1",10000,NULL,1,&TaskHandle_1,0);  
+      lastAlarm = 7;
+      return;
+    }
+    if(h == 15 && m == 30 && lastAlarm != 8)
+    {
+      xTaskCreatePinnedToCore(MyTask1,"Task1",10000,NULL,1,&TaskHandle_1,0);  
+      lastAlarm = 8;
+      return;
+    }
+    if(h == 15 && m == 23 && lastAlarm != 9)
+    {
+      xTaskCreatePinnedToCore(MyTask1,"Task1",10000,NULL,1,&TaskHandle_1,0);  
+      lastAlarm = 9;
+      return;
+    }
+  }
+  else if (dow == 5)
+  {
+    if(h == 8 && m == 0 && lastAlarm != 100)
+    {
+      xTaskCreatePinnedToCore(MyTask1,"Task1",10000,NULL,1,&TaskHandle_1,0);  
+      lastAlarm = 100;
+      return;
+    }
+    if(h == 9 && m == 40 && lastAlarm != 101)
+    {
+      xTaskCreatePinnedToCore(MyTask1,"Task1",10000,NULL,1,&TaskHandle_1,0);  
+      lastAlarm = 101;
+      return;
+    }
+    if(h == 10 && m == 0 && lastAlarm != 102)
+    {
+      xTaskCreatePinnedToCore(MyTask1,"Task1",10000,NULL,1,&TaskHandle_1,0);  
+      lastAlarm = 102;
+      return;
+    }
+    if(h == 12 && m == 0 && lastAlarm != 103)
+    {
+      xTaskCreatePinnedToCore(MyTask1,"Task1",10000,NULL,1,&TaskHandle_1,0);  
+      lastAlarm = 103;
+      return;
+    }
+    if(h == 12 && m == 20 && lastAlarm != 104)
+    {
+      xTaskCreatePinnedToCore(MyTask1,"Task1",10000,NULL,1,&TaskHandle_1,0);  
+      lastAlarm = 104;
+      return;
+    }
+  }
+}
+
 void setup()
 {
   Serial.begin(115200);
   Serial.println("");
   Serial.println("\n\nScrolling display from your Internet Browser");
 
+  // STARTUP BEEPS
+  xTaskCreatePinnedToCore(MyTask1,"Task1",10000,NULL,1,&TaskHandle_1,0);
+  
   //  EEPROM
   EEPROM.begin(512);
   Serial.println("\n\nEEPROM STARTED");
@@ -337,6 +459,9 @@ void setup()
 
   pinMode(LED_BUILTIN, OUTPUT);             // Heartbeat
   digitalWrite(LED_BUILTIN, LOW);
+
+  pinMode(BUZZER_PIN, OUTPUT);              // Buzzer
+  digitalWrite(BUZZER_PIN, LOW);
 
   //  SPIFFS
   if(!SPIFFS.begin(true)){
@@ -413,7 +538,6 @@ void setup()
   }
   ScrollingMsg.SetText((unsigned char *)szMesg, sizeof(szMesg) - 1);   // reset to start of string
 
-
   //Serial.println(TIMER_BASE_CLK);
 }
 
@@ -430,6 +554,7 @@ void loop()
     now = RTC.now();                          // Update the global var with current time 
     m = now.minute();  
     h = now.hour();
+    dow = now.dayOfTheWeek();
 
     //txtDateA[7] = '2';// HRS//txtDateA[8] = '3';// HRS//txtDateA[10] = '5';// MIN//txtDateA[11] = '9';// MIN
     sprintf(txtDateA, "%c%c%c%c%c%c%c%02d%c%02d", EFF_HSV_AH,0x00,0xff,0xff,0xff,0xff,0xff,h,'|',m);
@@ -440,7 +565,7 @@ void loop()
                         EFF_FRAME_RATE,0x00,EFF_HSV_AH,0x00,0xff,0xff,0xff,0xff,0xff,
                         EFF_SCROLL_LEFT,"     ",h,':',m,EFF_DELAY_FRAMES,0x00,0x2c,EFF_CUSTOM_RC,0x02,
                         EFF_RGB,0x00,0xc8,0x64,"      ",t,'^',' ',EFF_DELAY_FRAMES,0x00,0xee,
-                        EFF_RGB,0xd3,0x54,0x00,"      ",daysOfTheWeek[now.dayOfTheWeek()],' ',EFF_DELAY_FRAMES,0x00,0xee,
+                        EFF_RGB,0xd3,0x54,0x00,"      ",daysOfTheWeek[dow],' ',EFF_DELAY_FRAMES,0x00,0xee,
                         EFF_RGB,0x00,0x80,0x80,"      ",now.day(),'-',now.month(),EFF_DELAY_FRAMES,0x00,0xee,"      ",
                         EFF_CUSTOM_RC,0x01);
     }
@@ -449,9 +574,9 @@ void loop()
                         EFF_FRAME_RATE,0x00,EFF_HSV_AH,0x00,0xff,0xff,0xff,0xff,0xff,
                         EFF_SCROLL_LEFT,"     ",h,':',m,EFF_DELAY_FRAMES,0x00,0x2c,EFF_CUSTOM_RC,0x02,
                         EFF_RGB,0x00,0xc8,0x64,"      ",t,'^',' ',EFF_DELAY_FRAMES,0x00,0xee,
-                        EFF_RGB,0xd3,0x54,0x00,"      ",daysOfTheWeek[now.dayOfTheWeek()],' ',EFF_DELAY_FRAMES,0x00,0xee,
+                        EFF_RGB,0xd3,0x54,0x00,"      ",daysOfTheWeek[dow],' ',EFF_DELAY_FRAMES,0x00,0xee,
                         EFF_RGB,0x00,0x80,0x80,"      ",now.day(),'-',now.month(),EFF_DELAY_FRAMES,0x00,0xee,
-                        "      ",EFF_HSV_AH,0x00,0xff,0xff,0xff,0xff,0xff,EFF_FRAME_RATE,0x02,curMessage,"     ",EFF_FRAME_RATE,0x00,
+                        "      ",EFF_HSV_AH,0x00,0xff,0xff,0xff,0xff,0xff,EFF_FRAME_RATE,0x03,curMessage,"     ",EFF_FRAME_RATE,0x00,
                         EFF_CUSTOM_RC,0x01);
     }
                   
@@ -459,6 +584,8 @@ void loop()
       t = RTC.getTemperature();               // +or- from this for calibration
       updatetemp = 0;
     }
+
+    alarmCheck();
   }
 
   if (newMessageAvailable){
@@ -467,7 +594,7 @@ void loop()
     newMessageAvailable = false;
     Serial.println("new message received, updated EEPROM\n");
     delay(100);
-    eepromWriteInt(BRT_BEGIN, BRIGHTNESS);    // White new brightness value
+    eepromWriteInt(BRT_BEGIN, BRIGHTNESS);    // Write new brightness value
     FastLED.setBrightness(BRIGHTNESS);
     Serial.print("NeoMatrix Brightness set to ");
     Serial.println(BRIGHTNESS);
@@ -508,5 +635,5 @@ void loop()
   {
     FastLED.show();
   }
-  delay(10);
+  delay(5);
 }
