@@ -51,6 +51,8 @@
 #include <Wire.h>
 #include "RTClib.h"
 
+#define DISPLAY_TYPE_FLEX                   //! DISPLAY_TYPE_PCB, DISPLAY_TYPE_FLEX
+
 #define BUF_SIZE    400                     // 400 out of 512 used
 #define PASS_BSIZE  9                       // 8 digit password
 #define PASS_EXIST  405                     // password $ address
@@ -58,14 +60,22 @@
 #define P_CHAR      '`'
 #define BRT_BEGIN   425                     // Brightness value stored (int = 4Bytes)
 
-#define LED_BUILTIN 26
-#define LED_PIN     27
-#define VOLTS       5
-#define MAX_MA      3000
+#define BUZZER_PIN  23                      // Buzzer pin
 
-#define MATRIX_WIDTH  -32
-#define MATRIX_HEIGHT -8
-#define MATRIX_TYPE VERTICAL_MATRIX
+#define LED_BUILTIN 5                       // old26
+#define LED_PIN     13                      // old27
+#define VOLTS       5
+#define MAX_MA      500                     // !change to 3000
+
+#if defined (DISPLAY_TYPE_PCB)
+  #define MATRIX_WIDTH  -32
+  #define MATRIX_HEIGHT  -8
+  #define MATRIX_TYPE VERTICAL_MATRIX
+#elif defined (DISPLAY_TYPE_FLEX)
+  #define MATRIX_WIDTH  -32
+  #define MATRIX_HEIGHT   8
+  #define MATRIX_TYPE VERTICAL_ZIGZAG_MATRIX
+#endif
 
 #define EFF_CHAR_UP          0xd8          // in sprintf change 
 #define EFF_CHAR_DOWN        0xd9          // EFFECT_CHAR_UP to EFF_CHAR_UP in loop
@@ -98,15 +108,13 @@
 #define EFF_DELAY_FRAMES     0xf9
 #define EFF_CUSTOM_RC        0xfa
 
-#define BUZZER_PIN 23
-
 TaskHandle_t TaskHandle_1;
 
 int BRIGHTNESS = 30;
 
 int rc;                                     // custom return char for ledMatrix lib
 
-char ssid[] = "MessageBoardESP32";          // Change to your name
+char ssid[] = "LolinMessageBoard";          // Change to your name
 char password[PASS_BSIZE] = "password";     // dont change password here, change using web app
 
 uint16_t h = 0;
@@ -273,10 +281,10 @@ void rtcErrorHandler(){
 
 void fxSinlon() //* Startup effects
 {
-  FastLED.addLeds<WS2812B,LED_PIN,GRB>(fleds, 250).setCorrection(TypicalLEDStrip);  //std fastled for effects
+  FastLED.addLeds<WS2812B,LED_PIN,GRB>(fleds, 256).setCorrection(TypicalLEDStrip);  //std fastled for effects
   FastLED.clear(true);
   FastLED.setBrightness(150);
-  int gHue = 0, NUM_LEDS = 250, FRAMES_PER_SECOND = 120;
+  int gHue = 0, NUM_LEDS = 256, FRAMES_PER_SECOND = 120;
   while(gHue <201){
     fadeToBlackBy( fleds, NUM_LEDS, 20); // a colored dot sweeping back and forth, with fading trails
     int pos = beatsin16( 13, 0, NUM_LEDS-1 );
@@ -429,7 +437,7 @@ void setup()
   
   //  START DISPLAY
   Serial.println("\nNEOMATRIX DIPLAY STARTED");
-  //! FastLED.setMaxPowerInVoltsAndMilliamps(VOLTS, MAX_MA);
+  FastLED.setMaxPowerInVoltsAndMilliamps(VOLTS, MAX_MA);         //! 
   FastLED.addLeds<WS2812B, LED_PIN, GRB>(leds[0], leds.Size()).setCorrection(TypicalLEDStrip); //TypicalSMD5050
   FastLED.setBrightness(BRIGHTNESS);
   FastLED.clear(true);
