@@ -1,5 +1,5 @@
 /*----------------------------------------------------------------------------------------
-  Platforms: ESP32  (for ESP8266 use old version of the EEPROMHandler)
+  Platforms: ESP32 and ESP8266
   Language: C/C++/Arduino
   File: EEPROMHandler.h
   Parent: 2022_ESPMessageBoard_Neamatrix.cpp
@@ -36,22 +36,46 @@ String eepromReadString(int address, int16_t buffer_size){
   return String(data);
 }
 
-void eepromWriteChar(int address,char data){
-  EEPROM.writeChar(address,data);
-  EEPROM.commit();                            // save to EEPROM flash
-  delay(100);
-}
+#if defined(ESP32)
+  void eepromWriteChar(int address,char data){
+    EEPROM.writeChar(address,data);
+    EEPROM.commit();                            // save to EEPROM flash
+    delay(100);
+  }
 
-char eepromReadChar(int address){
-  return EEPROM.readChar(address);
-}
+  char eepromReadChar(int address){
+    return EEPROM.readChar(address);
+  }
 
-void eepromWriteInt(int address,int data){
-  EEPROM.writeInt(address,data);
-  EEPROM.commit();                            // save to EEPROM flash
-  delay(100);
-}
+  void eepromWriteInt(int address,int data){
+    EEPROM.writeInt(address,data);
+    EEPROM.commit();                            // save to EEPROM flash
+    delay(100);
+  }
 
-int eepromReadInt(int address){
-  return EEPROM.readInt(address);
-}
+  int eepromReadInt(int address){
+    return EEPROM.readInt(address);
+  }
+#elif defined(ESP8266)
+  void eepromWriteChar(int address,char data){
+    EEPROM.write(address,data);
+    EEPROM.commit();                            // save to EEPROM flash
+    delay(100);
+  }
+
+  char eepromReadChar(int address){
+    return EEPROM.read(address);
+  }
+
+  void eepromWriteInt(int address,int data){    // sudo to emulate esp32
+    EEPROM.write(address,data);
+    EEPROM.commit();                            // save to EEPROM flash
+    delay(100);
+  }
+
+  int eepromReadInt(int address){               // sudo to emulate esp32
+    return EEPROM.read(address);
+  }
+#endif
+
+

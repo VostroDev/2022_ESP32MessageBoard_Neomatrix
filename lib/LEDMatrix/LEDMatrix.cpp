@@ -12,7 +12,6 @@
 #include <FastLED.h>
 #include <LEDMatrix.h>
 
-struct CRGB m_OutOfBounds;
 
 cLEDMatrixBase::cLEDMatrixBase()
 {

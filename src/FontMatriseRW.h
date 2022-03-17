@@ -2,7 +2,7 @@
 #define FontMatriseRW_h
 #include <Arduino.h>
 
-const uint8_t MatriseRWFontData[] = {  // Modified and improved R Wilson 2022
+const uint8_t MatriseRWFontData[] = {  // Modified and improved RWilson '22
         5,  // Font Width
         7,  // Font Height
         32, // Font First Character

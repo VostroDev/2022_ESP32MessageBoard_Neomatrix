@@ -35,13 +35,23 @@
 ----------------------------------------------------------------------------------------*/
 
 #include <Arduino.h>
-#include <SPI.h>
-#include <WiFi.h>                           // * for esp8266 use <ESP8266WiFi.h>
-#include <AsyncTCP.h>                       // * for esp8266 use <ESPAsyncTCP.h>
+
+#if defined(ESP32)
+  #include <WiFi.h>
+  #include <AsyncTCP.h>
+  #include "SPIFFS.h"
+  #define LED_PIN     13                    // NEOPIXEL connection
+  #define LED_BUILTIN 5                     // lolin buildin led on 5
+#elif defined(ESP8266)
+  #include <ESP8266WiFi.h>
+  #include <ESPAsyncTCP.h>
+  #include <FS.h>
+  #define LED_PIN     7                     // NEOPIXEL connection
+#endif
 #include <ESPAsyncWebServer.h>
 #include <ArduinoJson.h>
+
 #include "EEPROMHandler.h"                  // Storing message into permanent memory
-#include "SPIFFS.h"
 
 #include <FastLED.h>
 #include <LEDMatrix.h>
@@ -51,7 +61,7 @@
 #include <Wire.h>
 #include "RTClib.h"
 
-#define DISPLAY_TYPE_FLEX                   //! DISPLAY_TYPE_PCB, DISPLAY_TYPE_FLEX
+#define DISPLAY_TYPE_PCB                    //! DISPLAY_TYPE_PCB, DISPLAY_TYPE_FLEX
 
 #define BUF_SIZE    400                     // 400 out of 512 used
 #define PASS_BSIZE  9                       // 8 digit password
@@ -62,8 +72,6 @@
 
 #define BUZZER_PIN  23                      // Buzzer pin
 
-#define LED_BUILTIN 5                       // old26
-#define LED_PIN     13                      // old27
 #define VOLTS       5
 #define MAX_MA      500                     // !change to 3000
 
@@ -451,9 +459,14 @@ void setup()
   StaticgMsg.Init(&leds, leds.Width(), ScrollingMsg.FontHeight() + 1, 1, 0); // >> 1 pixel //? change to +2 for 5x7 font
   StaticgMsg.SetText((unsigned char *)txtDateA, sizeof(txtDateA) - 1);
   StaticgMsg.SetTextColrOptions(COLR_RGB | COLR_SINGLE, 0x00, 0x00, 0xff);
+  
+  //  RTC  
+  #if defined(ESP32)
+    Wire.begin();                           // DS3231 RTC I2C - SDA(21) and SCL(22)
+  #elif defined(ESP8266)
+    Wire.begin(D1, D2);                     // ESP8266
+  #endif
 
-  //  RTC
-  Wire.begin();                             // DS3231 RTC I2C - SDA(21) and SCL(22)
   Serial.print("\nRTC STARTING >>> ");                                  
   if (! RTC.begin()) {
     Serial.println("RTC NOT FOUND");
