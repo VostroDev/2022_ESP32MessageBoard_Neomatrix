@@ -49,6 +49,7 @@
   #define LED_PIN     7                     // NEOPIXEL connection
 #endif
 #include <ESPAsyncWebServer.h>
+#include <AsyncElegantOTA.h>
 #include <ArduinoJson.h>
 
 #include "EEPROMHandler.h"                  // Storing message into permanent memory
@@ -547,6 +548,7 @@ void setup()
   Serial.print("AP IP address: ");
   Serial.println(myIP);
   
+  AsyncElegantOTA.begin(&server);             //* OTA - Start ElegantOTA
   server.begin();
   Serial.println("SERVER STARTED");
 
