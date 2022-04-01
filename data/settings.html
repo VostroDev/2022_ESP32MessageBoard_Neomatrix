@@ -339,7 +339,7 @@
           mySnack.textContent  = "Data successfully sent";
           mySnack.className = "show";
           setTimeout(function(){ mySnack.className = mySnack.className.replace("show", ""); }, 3000);
-          setTimeout(function() { window.location.href = "/"; }, 2000);
+          setTimeout(function(){ window.location.href = "/"; }, 2000);
         }
     
         function transferFailed(evt)
@@ -349,6 +349,12 @@
           mySnack.className = "show";
           setTimeout(function(){ mySnack.className = mySnack.className.replace("show", ""); }, 3000);
         }
+
+        function OTA()
+        {
+          window.open("/update","_self")
+        }
+
       </script>
     
     </head>
@@ -369,13 +375,13 @@
       </ul>
     </div >
       <div class="card">
-        <div style='display:inline-block;min-width:280px;'>
+        <nav style='display:inline-block;min-width:280px;'>
           <ul>
             <li><a href="/">Message</a></li>
             <li><a href="/time">Time</a></li>
             <li><a class="active" href="">Settings</a></li>
           </ul>
-        </div>
+        </nav>
         <div>
           <h3>Change Wifi password:</h3>
           <form id="data_form" name="frmText" autocomplete="off" action="javascript:SendPasswords()">
@@ -412,9 +418,14 @@
               oninvalid="this.setCustomValidity('must be longer than 8 characters')"
               onchange="try{setCustomValidity('')}catch(e){}"
               required><br/><br/>
-            <button type="submit" >submit</button>
+            <button type="submit" >&#9881 update password</button>
           </form>
         </div>
+        
+        <div>
+          <button onclick="OTA()">&#9729 update firmware</button>
+        </div>
+
         <div style='display:inline-block;min-width:280px;'>
           <div id="snackbar">Display by. R Wilson</div>
         </div>
