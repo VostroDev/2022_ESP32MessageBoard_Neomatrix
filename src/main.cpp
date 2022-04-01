@@ -2,9 +2,10 @@
   30/12/2021
   Author: R WILSON
   Platforms: ESP32 ONLY - ESP8266 not supported
-  Version: 4.0.0 - 17 Mar 2022
+  Version: 4.0.1 - 18 Mar 2022
   Language: C/C++/Arduino
-  New - large panel size version - FLEX PCB VERSION
+  v4.0.0 - large panel size version - FLEX PCB VERSION
+  v4.0.0 - validity check on message text
   ----------------------------------------------------------------------------------------
   Description:
   ESP32 connected to NeoPixel WS2812B LED matrix display (64x16 - 32x8 x 4 Panels)
@@ -39,6 +40,7 @@
 #include "SPIFFS.h"
 #include <AsyncTCP.h>
 #include <ESPAsyncWebServer.h>
+#include <AsyncElegantOTA.h>                // *OTA
 #include <ArduinoJson.h>
 
 #include "EEPROMHandler.h"                  // Storing message into permanent memory
@@ -46,7 +48,7 @@
 #include <FastLED.h>
 #include <LEDMatrix.h>
 #include <LEDText.h>
-#include <Font12x16RW.h>                    // "FontRobert.h" 5x7 font for 2 lines display
+#include <FontP12x16RW.h>                    // "FontRobert.h" 5x7 font for 2 lines display
 
 #include <Wire.h>
 #include "RTClib.h"
@@ -58,14 +60,14 @@
 #define P_CHAR      '`'
 #define BRT_BEGIN   425                     // Brightness value stored (int = 4Bytes)
 
-#define BUZZER_PIN  23                      // Buzzer pin
+#define BUZZER_PIN  19                      //TODO 19 for lolin board 23 38p-board Buzzer pin
 
 #define LED_PIN     27                      // NeoPixel pin 1/2 display
 #define LED2_PIN    13                      // NeoPixel pin other 1/2 display
 #define LED_BUILTIN 5                       // lolin buildin led on 5
 
 #define VOLTS       5
-#define MAX_MA      500                     // !change to 3000
+#define MAX_MA      500                    // !change to 3000
 
 #define MATRIX_TYPE          VERTICAL_ZIGZAG_MATRIX
 #define MATRIX_TILE_WIDTH   -64             // width of EACH NEOPIXEL MATRIX (not total display)
@@ -144,7 +146,8 @@ CRGB fleds[512];
 
 char txtDateA[] = { EFFECT_HSV_AH "\x00\xff\xff\xff\xff\xff" "12|30" };
 char txtDateB[] = { EFFECT_HSV_AH "\x00\xff\xff\xff\xff\xff" "12:30" };
-char szMesg[BUF_SIZE] = { EFFECT_FRAME_RATE "\x00" EFFECT_HSV_AH "\x00\xff\xff\xff\xff\xff" EFFECT_SCROLL_LEFT "     WELCOME TO NORTHLINK COLLEGE     "  EFFECT_CUSTOM_RC "\x01" };
+char szMesg[BUF_SIZE] = { EFFECT_FRAME_RATE "\x00" EFFECT_HSV_AH "\x00\xff\xff\xff\xff\xff" EFFECT_SCROLL_LEFT "     RW     "  EFFECT_CUSTOM_RC "\x01" };
+//char szMesg[BUF_SIZE] = { EFFECT_FRAME_RATE "\x00" EFFECT_HSV_AH "\x00\xff\xff\xff\xff\xff" EFFECT_SCROLL_LEFT "     WELCOME TO NORTHLINK COLLEGE     "  EFFECT_CUSTOM_RC "\x01" };
 
 String handleTimeUpdate(uint8_t *data, size_t len){
   data[len] = '\0';
@@ -170,7 +173,7 @@ String handleMessageUpdate(uint8_t *data, size_t len){
   DynamicJsonDocument doc(JSON_OBJECT_SIZE(2) + 350);
   DeserializationError error = deserializeJson(doc, json);  // Deserialize the JSON document
 
-  if (error){                                                // Test if parsing succeeds.
+  if (error){                                               // Test if parsing succeeds.
     Serial.print(F("deserializeJson() failed: "));
     Serial.println(error.f_str());
     return "deserializeJson error";
@@ -194,9 +197,9 @@ String handleSettingsUpdate(uint8_t *data, size_t len){
   String json = (char*)data;
   
   DynamicJsonDocument doc(JSON_OBJECT_SIZE(3) + 130);
-  DeserializationError error = deserializeJson(doc, json);   // Deserialize the JSON document
+  DeserializationError error = deserializeJson(doc, json);  // Deserialize the JSON document
 
-  if (error){                                                // Test if parsing succeeds.
+  if (error){                                               // Test if parsing succeeds.
     Serial.print(F("deserializeJson() failed: "));
     Serial.println(error.f_str());
     return "deserializeJson error";
@@ -283,12 +286,12 @@ void rtcErrorHandler(){
 void fxSinlon() //* Startup effects
 { 
   int gHue = 0, FRAMES_PER_SECOND = 120, FX_NUM_LEDS = 512;
-  FastLED.addLeds<WS2812B,LED_PIN,GRB>(fleds, 512).setCorrection(TypicalLEDStrip);  //std fastled for effects
+  FastLED.addLeds<WS2812B,LED_PIN,GRB>(fleds, 512).setCorrection(TypicalLEDStrip);   //std fastled for effects
   FastLED.addLeds<WS2812B,LED2_PIN,GRB>(fleds, 512).setCorrection(TypicalLEDStrip);  //std fastled for effects
   FastLED.clear(true);
   FastLED.setBrightness(255);
   
-  while(gHue <201){
+  while(gHue <201){ 
     fadeToBlackBy(fleds, FX_NUM_LEDS, 20); // a colored dot sweeping back and forth, with fading trails
     int pos = beatsin16( 13, 0, FX_NUM_LEDS-1 );
     fleds[pos] += CHSV( gHue, 255, 192);
@@ -299,8 +302,8 @@ void fxSinlon() //* Startup effects
     EVERY_N_MILLISECONDS( 1000 ) {digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));}
   }
   // back to Matrixled
-  FastLED.addLeds<WS2812B,  LED_PIN, GRB>(leds[0], 0,             leds.Size()/2).setCorrection(TypicalLEDStrip);//TypicalSMD5050 //! new
-  FastLED.addLeds<WS2812B, LED2_PIN, GRB>(leds[0], leds.Size()/2, leds.Size()/2).setCorrection(TypicalLEDStrip); //! new
+  FastLED.addLeds<WS2812B,  LED_PIN, GRB>(leds[0], 0,             leds.Size()/2).setCorrection(TypicalLEDStrip);//TypicalSMD5050
+  FastLED.addLeds<WS2812B, LED2_PIN, GRB>(leds[0], leds.Size()/2, leds.Size()/2).setCorrection(TypicalLEDStrip);
   FastLED.setBrightness(BRIGHTNESS);
 }
 
@@ -316,8 +319,7 @@ static void MultiCoreTask1(void* pvParameters)
   vTaskDelete(TaskHandle_1);    // Delete the task using the TaskHandle_1
 }
 
-void alarmCheck()
-{
+void alarmCheck(){
   if(dow > 0 && dow < 5)        // Mon -Thu
   {
     if(h == 8 && m == 0 && lastAlarm != 0){
@@ -372,8 +374,7 @@ void alarmCheck()
       return;
     }
   }
-  else if (dow == 5)            // Fri
-  {
+  else if (dow == 5){            // Fri
     if(h == 8 && m == 0 && lastAlarm != 100){
       xTaskCreatePinnedToCore(MultiCoreTask1,"Task1",10000,NULL,1,&TaskHandle_1,0);  
       lastAlarm = 100;
@@ -402,8 +403,7 @@ void alarmCheck()
   }
 }
 
-void setup()
-{
+void setup(){
   Serial.begin(115200);
   Serial.println("");
   Serial.println("\n\nScrolling display from your Internet Browser");
@@ -422,15 +422,14 @@ void setup()
 
   BRIGHTNESS = eepromReadInt(BRT_BEGIN);                          // read Neomatrix brightness value
   if(BRIGHTNESS > 255) { BRIGHTNESS = 255;}
-  Serial.print("NeoMatrix Brightness set to ");                   // done in line 318
+  Serial.print("NeoMatrix Brightness set to ");
   Serial.println(BRIGHTNESS);
-  
   
   //  START DISPLAY
   Serial.println("\nNEOMATRIX DIPLAY STARTED");
   FastLED.setMaxPowerInVoltsAndMilliamps(VOLTS, MAX_MA);         //! 
-  FastLED.addLeds<WS2812B,  LED_PIN, GRB>(leds[0], 0,             leds.Size()/2).setCorrection(TypicalLEDStrip);//TypicalSMD5050 //! new
-  FastLED.addLeds<WS2812B, LED2_PIN, GRB>(leds[0], leds.Size()/2, leds.Size()/2).setCorrection(TypicalLEDStrip); //! new
+  FastLED.addLeds<WS2812B,  LED_PIN, GRB>(leds[0], 0,             leds.Size()/2).setCorrection(TypicalLEDStrip);//TypicalSMD5050
+  FastLED.addLeds<WS2812B, LED2_PIN, GRB>(leds[0], leds.Size()/2, leds.Size()/2).setCorrection(TypicalLEDStrip);
 
   FastLED.setBrightness(BRIGHTNESS);
   FastLED.clear(true);
@@ -441,12 +440,12 @@ void setup()
   ScrollingMsg.SetTextColrOptions(COLR_RGB | COLR_SINGLE, 0x00, 0x00, 0xff);
 
   StaticgMsg.SetFont(Font12x16Data);
-  StaticgMsg.Init(&leds, leds.Width(), ScrollingMsg.FontHeight() + 1, -2, 0); // >> 1 pixel
+  StaticgMsg.Init(&leds, leds.Width(), ScrollingMsg.FontHeight() + 1, 0, 0); // >> 1 pixel
   StaticgMsg.SetText((unsigned char *)txtDateA, sizeof(txtDateA) - 1);
   StaticgMsg.SetTextColrOptions(COLR_RGB | COLR_SINGLE, 0x00, 0x00, 0xff);
   
   //  RTC  
-  Wire.begin();                           // DS3231 RTC I2C - SDA(21) and SCL(22)
+  Wire.begin();                             // DS3231 RTC I2C - SDA(21) and SCL(22)
 
   Serial.print("\nRTC STARTING >>> ");                                  
   if (! RTC.begin()) {
@@ -528,11 +527,12 @@ void setup()
   Serial.print("AP IP address: ");
   Serial.println(myIP);
   
+  AsyncElegantOTA.begin(&server);             //* OTA - Start ElegantOTA
   server.begin();
   Serial.println("SERVER STARTED");
 
   //  DISPLAY WELCOME MESSAGE
-  fxSinlon();                                 //* Display special startup effect
+  fxSinlon();                                 // Display special startup effect
   while(ScrollingMsg.UpdateText() != 1)
   {
     FastLED.show();
@@ -544,8 +544,7 @@ void setup()
   //Serial.println(TIMER_BASE_CLK);
 }
 
-void loop()
-{
+void loop(){
   static uint32_t timeLast = 0;               // Heartbeat
   static uint8_t t = 0;                       // temperature
   static uint8_t updatetemp = 11;             // so updates temp at startup
