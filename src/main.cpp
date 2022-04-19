@@ -40,7 +40,7 @@
 #include "SPIFFS.h"
 #include <AsyncTCP.h>
 #include <ESPAsyncWebServer.h>
-#include <AsyncElegantOTA.h>                // *OTA
+#include <AsyncElegantOTA.h>                // *OTA 
 #include <ArduinoJson.h>
 
 #include "EEPROMHandler.h"                  // Storing message into permanent memory
@@ -146,7 +146,7 @@ CRGB fleds[512];
 
 char txtDateA[] = { EFFECT_HSV_AH "\x00\xff\xff\xff\xff\xff" "12|30" };
 char txtDateB[] = { EFFECT_HSV_AH "\x00\xff\xff\xff\xff\xff" "12:30" };
-char szMesg[BUF_SIZE] = { EFFECT_FRAME_RATE "\x00" EFFECT_HSV_AH "\x00\xff\xff\xff\xff\xff" EFFECT_SCROLL_LEFT "     R WILSON     "  EFFECT_CUSTOM_RC "\x01" };
+char szMesg[BUF_SIZE] = { EFFECT_FRAME_RATE "\x00" EFFECT_HSV_AH "\x00\xff\xff\xff\xff\xff" EFFECT_SCROLL_LEFT "     RW     "  EFFECT_CUSTOM_RC "\x01" };
 //char szMesg[BUF_SIZE] = { EFFECT_FRAME_RATE "\x00" EFFECT_HSV_AH "\x00\xff\xff\xff\xff\xff" EFFECT_SCROLL_LEFT "     WELCOME TO NORTHLINK COLLEGE     "  EFFECT_CUSTOM_RC "\x01" };
 
 String handleTimeUpdate(uint8_t *data, size_t len){
