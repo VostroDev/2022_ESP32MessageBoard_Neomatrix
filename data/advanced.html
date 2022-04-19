@@ -271,7 +271,7 @@
         }
     
         li {
-          float: left;
+           float: center;  /*left */
         }
     
         li a {
@@ -349,12 +349,6 @@
           mySnack.className = "show";
           setTimeout(function(){ mySnack.className = mySnack.className.replace("show", ""); }, 3000);
         }
-
-        function OTA()
-        {
-          window.open("/update","_self")
-        }
-
       </script>
     
     </head>
@@ -377,9 +371,7 @@
       <div class="card">
         <nav style='display:inline-block;min-width:280px;'>
           <ul>
-            <li><a href="/">Message</a></li>
-            <li><a href="/time">Time</a></li>
-            <li><a class="active" href="">Settings</a></li>
+            <li><a href="/">Advanced Settings</a></li>
           </ul>
         </nav>
         <div>
@@ -418,12 +410,12 @@
               oninvalid="this.setCustomValidity('must be longer than 8 characters')"
               onchange="try{setCustomValidity('')}catch(e){}"
               required><br/><br/>
-            <button type="submit" >&#9881 update password</button>
+            <button type="submit" >update settings</button>
           </form>
         </div>
         
         <div>
-          <button onclick="OTA()">&#9729 update firmware</button>
+          <button onclick="location.href='/'">cancel</button>
         </div>
 
         <div style='display:inline-block;min-width:280px;'>
