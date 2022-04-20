@@ -1,0 +1,94 @@
+<!DOCTYPE html><html lang="en">
+    <head><meta charset="UTF-8" name="viewport" content="width=device-width, initial-scale=1, user-scalable=no"/>
+      <title>Message Board - Settings</title>
+
+      <link href="css/materialize.min.css" type="text/css" rel="stylesheet" media="screen,projection"/>
+      <link href="css/advanced.css" type="text/css" rel="stylesheet" media="screen,projection"/>
+      <link href="css/circles.css" type="text/css" rel="stylesheet" media="screen,projection"/>
+    </head>
+    
+    <body>
+      <div class="area" >
+        <ul class="circles">
+          <li></li>
+          <li></li>
+          <li></li>
+          <li></li>
+          <li></li>
+          <li></li>
+          <li></li>
+          <li></li>
+          <li></li>
+          <li></li>
+        </ul>
+      </div >
+      <div class="card">
+        <nav>
+          <div class="nav-content">
+            <div class = "row">
+            <ul class="">
+              <li><a href="/">Message</a></li>
+              <li><a class="time" href="/time">Time</a></li>
+              <li"><a class="active" href="">Settings</a></li>
+            </ul>
+          </div>
+          </div>
+        </nav>
+
+        <div>
+          <h3>Change Wifi password:</h3>
+          <form id = "frmInput" class = "col s12" autocomplete="off" action="javascript:SendPasswords()">
+            <div class="inputfield">
+              <input 
+                id="oldp" 
+                type="text" 
+                placeholder='enter old password' 
+                maxlength="15" 
+                pattern=".{8,}" 
+                autocomplete="off"
+                oninput="setCustomValidity(' ')"
+                oninvalid="this.setCustomValidity('must be longer than 8 characters')"
+                onchange="try{setCustomValidity('')}catch(e){}"
+                required>
+              <input 
+                id="newp" 
+                type="text" 
+                placeholder='enter new password' 
+                maxlength="8" 
+                pattern=".{8,}"  
+                autocomplete="off"
+                oninput="setCustomValidity(' ')"
+                oninvalid="this.setCustomValidity('must be longer than 8 characters')"
+                onchange="try{setCustomValidity('')}catch(e){}"
+                required><br/>
+              <input 
+                id="renewp" 
+                type="text" 
+                placeholder='re-enter new password' 
+                maxlength="8" 
+                pattern=".{8,}" 
+                autocomplete="off"
+                oninput="setCustomValidity(' ')"
+                oninvalid="this.setCustomValidity('must be longer than 8 characters')"
+                onchange="try{setCustomValidity('')}catch(e){}"
+                required><br/><br/>
+            </div>
+            <button type="submit" >&#9881 update password</button>
+          </form>
+        </div>
+        
+        <div>
+          <button onclick="OTA()">&#9729 update firmware</button>
+        </div>
+
+        <div style='display:inline-block;min-width:280px;'>
+          <div id="snackbar">Display by. R Wilson</div>
+        </div>
+      </div>
+
+      <script src="js/advanced.js"></script>
+      <script src="js/jquery-3.6.0.min.js"></script>
+      <script src="js/materialize.min.js"></script>
+    </body>
+    
+    </html>

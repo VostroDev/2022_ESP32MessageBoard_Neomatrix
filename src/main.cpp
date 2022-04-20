@@ -123,7 +123,7 @@ int BRIGHTNESS = 30;
 
 int rc;                                     // custom return char for ledMatrix lib
 
-char ssid[] = "LolinMessageBoard";          // Change to your name
+char ssid[] = "38PMessageBoard";          // Change to your name
 char password[PASS_BSIZE] = "password";     // dont change password here, change using web app
 
 uint16_t h = 0;
