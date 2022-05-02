@@ -1,94 +1,119 @@
-<!DOCTYPE html><html lang="en">
-    <head><meta charset="UTF-8" name="viewport" content="width=device-width, initial-scale=1, user-scalable=no"/>
-      <title>Message Board - Settings</title>
+<!DOCTYPE html>
+<html lang="en">
 
-      <link href="css/materialize.min.css" type="text/css" rel="stylesheet" media="screen,projection"/>
-      <link href="css/advanced.css" type="text/css" rel="stylesheet" media="screen,projection"/>
-      <link href="css/circles.css" type="text/css" rel="stylesheet" media="screen,projection"/>
-    </head>
-    
-    <body>
-      <div class="area" >
-        <ul class="circles">
-          <li></li>
-          <li></li>
-          <li></li>
-          <li></li>
-          <li></li>
-          <li></li>
-          <li></li>
-          <li></li>
-          <li></li>
-          <li></li>
-        </ul>
-      </div >
-      <div class="card">
-        <nav>
-          <div class="nav-content">
-            <div class = "row">
-            <ul class="">
-              <li><a href="/">Message</a></li>
-              <li><a class="time" href="/time">Time</a></li>
-              <li"><a class="active" href="">Settings</a></li>
-            </ul>
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Advanced Settings</title>
+  <link href="css/advanced.css" type="text/css" rel="stylesheet" media="screen,projection">
+  <link href="css/circles.css" type="text/css" rel="stylesheet" media="screen,projection">
+  <link href="css/colorPick.css" rel="stylesheet">
+  <link href="css/colorPick.dark.theme.css" rel="stylesheet">
+</head>
+
+<body>
+  <div class="area">
+    <ul class="circles">
+      <li></li>
+      <li></li>
+      <li></li>
+      <li></li>
+      <li></li>
+      <li></li>
+      <li></li>
+      <li></li>
+      <li></li>
+      <li></li>
+    </ul>
+  </div>
+  <div class="card">
+    <nav style='display:inline-block;min-width:280px;'>
+      <ul>
+        <li><a href="/">Message</a></li>
+        <li><a href="/time">Time</a></li>
+        <li><a class="active" href="">Settings</a></li>
+      </ul>
+    </nav>
+    <div>
+      <h3>Change Wifi password:</h3>
+      <form id="data_form" name="frmText" autocomplete="off" action="javascript:SendPasswords()">
+
+        <div class="frmfields">
+
+          <div class="row">
+            <label for="timedur">Time Duration</label>
+            <select name="timedur" id="timedur" required>
+              <option value="5">5 sec</option>
+              <option value="10">10 sec</option>
+              <option value="20">20 sec</option>
+              <option value="30">30 sec</option>
+              <option value="40">40 sec</option>
+              <option value="50">50 sec</option>
+              <option value="60">1 min</option>
+            </select><br><br>
           </div>
+
+          <div class="frmrow">
+            <h4>Time Colour</h4>
+            <div class="picker" id="timecolor"></div>
           </div>
-        </nav>
 
-        <div>
-          <h3>Change Wifi password:</h3>
-          <form id = "frmInput" class = "col s12" autocomplete="off" action="javascript:SendPasswords()">
-            <div class="inputfield">
-              <input 
-                id="oldp" 
-                type="text" 
-                placeholder='enter old password' 
-                maxlength="15" 
-                pattern=".{8,}" 
-                autocomplete="off"
-                oninput="setCustomValidity(' ')"
-                oninvalid="this.setCustomValidity('must be longer than 8 characters')"
-                onchange="try{setCustomValidity('')}catch(e){}"
-                required>
-              <input 
-                id="newp" 
-                type="text" 
-                placeholder='enter new password' 
-                maxlength="8" 
-                pattern=".{8,}"  
-                autocomplete="off"
-                oninput="setCustomValidity(' ')"
-                oninvalid="this.setCustomValidity('must be longer than 8 characters')"
-                onchange="try{setCustomValidity('')}catch(e){}"
-                required><br/>
-              <input 
-                id="renewp" 
-                type="text" 
-                placeholder='re-enter new password' 
-                maxlength="8" 
-                pattern=".{8,}" 
-                autocomplete="off"
-                oninput="setCustomValidity(' ')"
-                oninvalid="this.setCustomValidity('must be longer than 8 characters')"
-                onchange="try{setCustomValidity('')}catch(e){}"
-                required><br/><br/>
-            </div>
-            <button type="submit" >&#9881 update password</button>
-          </form>
-        </div>
-        
-        <div>
-          <button onclick="OTA()">&#9729 update firmware</button>
+          <div class="frmrow">
+            <h4>Temp Colour</h4>
+            <div class="picker" id="tempcolor"></div>
+          </div>
+
+          <div class="frmrow">
+            <h4>Day Colour</h4>
+            <div class="picker" id="dowcolor"></div>
+          </div>
+
+          <div class="frmrow">
+            <h4>Date Colour</h4>
+            <div class="picker" id="datecolor"></div>
+          </div>
+
+          <div class="frmrow">
+            <h4>Msg Colour</h4>
+            <div class="picker" id="msgcolor"></div>
+          </div>
+
+          <div class="row">
+            <label for="msgspeed">Msg Speed</label>
+            <select name="msgspeed" id="msgspeed" required>
+              <option value="0">fastest</option>
+              <option value="1" selected>fast</option>
+              <option value="2">med</option>
+              <option value="3">slow</option>
+              <option value="4">very slow</option>
+            </select>
+          </div>
+
+          <div class="row">
+            <label for="msgonly">Msg Only</label>
+            <input id="msgonly" name="msgonly" type="checkbox" required><br><br>
+          </div>
         </div>
 
-        <div style='display:inline-block;min-width:280px;'>
-          <div id="snackbar">Display by. R Wilson</div>
+        <div class="row">
+          <button type="submit">&#9881 update password</button>
         </div>
-      </div>
+      </form>
+    </div>
 
-      <script src="js/advanced.js"></script>
-      <script src="js/jquery-3.6.0.min.js"></script>
-      <script src="js/materialize.min.js"></script>
-    </body>
-    
-    </html>
+    <div>
+      <p id="signature">Colours will appear slightly different</p>
+    </div>
+
+    <div style='display:inline-block;min-width:280px;'>
+      <div id="snackbar">Display by. R Wilson</div>
+    </div>
+  </div>
+
+  <script src="js/jquery-3.1.1.min.js"></script>
+  <script src="js/colorPick.js"></script>
+  <script src="js/advanced.js"></script>
+</body>
+
+</html>

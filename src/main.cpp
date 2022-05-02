@@ -2,7 +2,7 @@
   30/12/2021
   Author: R WILSON
   Platforms: ESP32
-  Version: 3.0.0 - 08 Mar 2022
+  Version: 3.0.1 - 20 Apr 2022
   Language: C/C++/Arduino
   Working
   ----------------------------------------------------------------------------------------
