@@ -262,6 +262,13 @@
           margin-top: 10px;
         }
 
+        button:active{
+          background:red;
+          box-shadow: 0px 4px 241px 7px white;
+          -webkit-box-shadow: 0px 4px 241px 7px white;
+          -moz-box-shadow: 0px 4px 241px 7px white;
+        }
+
         ul {
           list-style-type: none;
           margin: 0;
@@ -291,6 +298,20 @@
           background-size: 800% 100%;
           animation: gradient 20s linear infinite;
           animation-direction: alternate;
+        }
+
+        .advbtncontainer {
+          display: flex;
+          margin-top: 10px;
+          margin-left: 10px;
+          margin-right: 10px;
+        }
+
+        .advbtn {
+          font-size: 0.9em;
+          width: 140px;
+          margin-left: 5px;
+          margin-right: 5px;
         }
       </style>
     
@@ -339,7 +360,7 @@
           mySnack.textContent  = "Data successfully sent";
           mySnack.className = "show";
           setTimeout(function(){ mySnack.className = mySnack.className.replace("show", ""); }, 3000);
-          setTimeout(function(){ window.location.href = "/"; }, 2000);
+          /* setTimeout(function(){ window.location.href = "/"; }, 2000); */
         }
     
         function transferFailed(evt)
@@ -353,6 +374,11 @@
         function OTA()
         {
           window.open("/update","_self")
+        }
+
+        function advancedSettings()
+        {
+          window.open("/advanced","_self")
         }
 
       </script>
@@ -418,12 +444,13 @@
               oninvalid="this.setCustomValidity('must be longer than 8 characters')"
               onchange="try{setCustomValidity('')}catch(e){}"
               required><br/><br/>
-            <button type="submit" >&#9881 update password</button>
+            <button type="submit" >update password</button>
           </form>
         </div>
-        
-        <div>
-          <button onclick="OTA()">&#9729 update firmware</button>
+
+        <div class="advbtncontainer">
+          <button class="advbtn" onclick="advancedSettings()">advanced</button>
+          <button class="advbtn" onclick="OTA()">update firmware</button>
         </div>
 
         <div style='display:inline-block;min-width:280px;'>

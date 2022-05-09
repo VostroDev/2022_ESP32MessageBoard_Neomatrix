@@ -75,6 +75,13 @@
         animation-direction: alternate;
       }
 
+      button:active{
+        background:red;
+        box-shadow: 0px 4px 241px 7px white;
+        -webkit-box-shadow: 0px 4px 241px 7px white;
+        -moz-box-shadow: 0px 4px 241px 7px white;
+      }
+
       @property --rotate {
         syntax: "<angle>";
         initial-value: 132deg;
@@ -527,7 +534,7 @@
         </div>
 
         <div>
-          <button class ="neon-button" onclick="SendData()">send data</button>
+          <button onclick="SendData()">send data</button>
         </div>
 
         <div>

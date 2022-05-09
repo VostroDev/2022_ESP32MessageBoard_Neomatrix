@@ -158,7 +158,7 @@ body {
   height:1.1em;
 }
 
-button {
+button{
   border:0;
   border-radius:0.3rem;
   color:#fff;
@@ -170,6 +170,13 @@ button {
   animation: gradient 20s linear infinite;
   animation-direction: alternate;
   margin-top: 3px;
+}
+
+button:active{
+  background:red;
+  box-shadow: 0px 4px 241px 7px white;
+  -webkit-box-shadow: 0px 4px 241px 7px white;
+  -moz-box-shadow: 0px 4px 241px 7px white;
 }
 
 .picker {

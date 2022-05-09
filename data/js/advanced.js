@@ -1,47 +1,76 @@
-function SendPasswords() {
-  console.log("save button was clicked!");
+function rgbToObj(rgb) {
+  
+  let colors = ["red", "green", "blue"]
 
-  var oldp = document.getElementById("oldp").value;
-  var newp = document.getElementById("newp").value;
-  var renewp = document.getElementById("renewp").value;
+  let colorArr = rgb.slice(
+      rgb.indexOf("(") + 1, 
+      rgb.indexOf(")")
+  ).split(", ");
 
-  if (newp != renewp) {
-    //Passwords Don't Match
-    alert("Error: New password and confirmation password don't match");
-    return false;
-  } else {
-    var data = { oldpassword: oldp, newpassword: newp, renewpassword: renewp };
+  let obj = new Object();
 
-    var xhr = new XMLHttpRequest();
-    var url = "/settings/send";
+  colorArr.forEach((k, i) => {
+      obj[colors[i]] = k
+  })
 
-    xhr.addEventListener("load", transferComplete);
-    xhr.addEventListener("error", transferFailed);
-
-    xhr.onreadystatechange = function () {
-      if (this.readyState == 4 && this.status == 200) {
-        // Typical action to be performed when the document is ready:
-        if (xhr.responseText != null) {
-          console.log(xhr.responseText);
-          alert(xhr.responseText);
-        }
-      }
-    };
-
-    xhr.open("POST", url, true);
-    xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
-    xhr.send(JSON.stringify(data));
-    return true;
-  }
+  return obj;
 }
-//new message: {"oldpassword":"123","newpassword":"456","renewpassword":"789"}
+
+function SendData() {
+  console.log("save button was clicked!");
+  
+  var timedur = $('#timedur').find(":selected").val();
+  var timecolor = rgbToObj($("#timecolor").css('Color'));
+  var tempcolor = rgbToObj($("#tempcolor").css('Color'));
+  var dowcolor  = rgbToObj($("#dowcolor").css('Color'));
+  var datecolor = rgbToObj($("#datecolor").css('Color'));
+  var msgcolor  = rgbToObj($("#msgcolor").css('Color'));
+  var msgspeed = $('#msgspeed').find(":selected").val();
+  var msgonly = "0";
+  if ($('#msgonly').is(":checked")) {
+    msgonly = "1";
+  }
+
+  var json = JSON.stringify({ 'timedur':timedur,
+                              'timecolor':[timecolor['red'], timecolor['green'], timecolor['blue']] , 
+                              'tempcolor':[tempcolor['red'], tempcolor['green'], tempcolor['blue']] ,                            
+                              'dowcolor':[dowcolor['red'],  dowcolor['green'], dowcolor['blue']] , 
+                              'datecolor':[datecolor['red'], datecolor['green'], datecolor['blue']] , 
+                              'msgcolor':[msgcolor['red'], msgcolor['green'], msgcolor['blue']] , 
+                              'msgspeed':msgspeed,
+                              'msgonly':msgonly
+                            });
+
+  //console.log("Data sent: " + json);
+
+  var xhr = new XMLHttpRequest();
+  var url = "/advanced/send";
+
+  xhr.addEventListener("load", transferComplete);
+  xhr.addEventListener("error", transferFailed);
+
+  xhr.onreadystatechange = function () {
+    if (this.readyState == 4 && this.status == 200) {
+      // Typical action to be performed when the document is ready:
+      if (xhr.responseText != null) {
+        console.log(xhr.responseText);
+        //alert(xhr.responseText);
+      }
+    }
+  };
+
+  xhr.open("POST", url, true);
+  xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+  xhr.send(json);
+  return true;
+}
 
 function transferComplete(evt) {
   var mySnack = document.getElementById("snackbar");
   mySnack.textContent = "Data successfully sent";
   mySnack.className = "show";
   setTimeout(function () { mySnack.className = mySnack.className.replace("show", ""); }, 3000);
-  setTimeout(function () { window.location.href = "/"; }, 2000);
+  // setTimeout(function () { window.location.href = "/"; }, 2000);
 }
 
 function transferFailed(evt) {
@@ -51,20 +80,16 @@ function transferFailed(evt) {
   setTimeout(function () { mySnack.className = mySnack.className.replace("show", ""); }, 3000);
 }
 
-function OTA() {
-  window.open("/update", "_self");
-}
-
 $("#timecolor").colorPick({
-  'allowRecent': true,
+  'allowRecent': false,
   'allowCustomColor': false,
   'paletteLabel': 'LED COLOUR:',
-  'initialColor' : '#ECF0F1',
-  'palette': ["#ffffff", "#16a085", "#2ecc71", "#27ae60", "#3498db", "#2980b9", "#9b59b6", "#8e44ad", "#34495e", "#2c3e50", "#f1c40f", "#f39c12", "#e67e22", "#d35400", "#e74c3c", "#c0392b", "#ecf0f1"],
+  'initialColor' : '#000000', 
+  'palette': ["#000000", "#ff0000", "#00ff00", "#0000ff", "#ffffff", "#00c864", "#64dd17", "#008080", "#00bcd4", "#00186f", "#d35400", "#e81e62", "#e91e63", "#d500f9","#9c27b0"],
   'onColorSelected': function() {
-    if(this.color == '#FFFFFF'){
+    if(this.color == '#000000'){
       console.log("The user has selected the color: Rainbow")
-      this.element.css({'backgroundColor': 'White', 'color': 'White', 'background': 'linear-gradient(138deg, #ebf95e, #65f540, #2e85b5, #9147b5, #9a41b5, #fd1d1d, #fcb045)'});
+      this.element.css({'backgroundColor': 'Black', 'color': 'Black', 'background': 'linear-gradient(138deg, #ebf95e, #65f540, #2e85b5, #9147b5, #9a41b5, #fd1d1d, #fcb045)'});
     }
     else{
       console.log("The user has selected the color: " + this.color)
@@ -75,11 +100,11 @@ $("#timecolor").colorPick({
 
 $("#tempcolor").colorPick({
   'initialColor' : '#00c864',
-  'palette': ["#ffffff", "#16a085", "#2ecc71", "#27ae60", "#3498db", "#2980b9", "#9b59b6", "#8e44ad", "#34495e", "#2c3e50", "#f1c40f", "#f39c12", "#e67e22", "#d35400", "#e74c3c", "#c0392b", "#ecf0f1"],
+  'palette': ["#000000", "#ff0000", "#00ff00", "#0000ff", "#ffffff", "#00c864", "#64dd17", "#008080", "#00bcd4", "#00186f", "#d35400", "#e81e62", "#e91e63", "#d500f9","#9c27b0"],
   'onColorSelected': function() {
-    if(this.color == '#FFFFFF'){
+    if(this.color == '#000000'){
       console.log("The user has selected the color: Rainbow")
-      this.element.css({'backgroundColor': 'White', 'color': 'White', 'background': 'linear-gradient(138deg, #ebf95e, #65f540, #2e85b5, #9147b5, #9a41b5, #fd1d1d, #fcb045)'});
+      this.element.css({'backgroundColor': 'Black', 'color': 'Black', 'background': 'linear-gradient(138deg, #ebf95e, #65f540, #2e85b5, #9147b5, #9a41b5, #fd1d1d, #fcb045)'});
     }
     else{
       console.log("The user has selected the color: " + this.color)
@@ -90,11 +115,11 @@ $("#tempcolor").colorPick({
 
 $("#dowcolor").colorPick({
   'initialColor' : '#d35400',
-  'palette': ["#ffffff", "#16a085", "#2ecc71", "#27ae60", "#3498db", "#2980b9", "#9b59b6", "#8e44ad", "#34495e", "#2c3e50", "#f1c40f", "#f39c12", "#e67e22", "#d35400", "#e74c3c", "#c0392b", "#ecf0f1"],
+  'palette': ["#000000", "#ff0000", "#00ff00", "#0000ff", "#ffffff", "#00c864", "#64dd17", "#008080", "#00bcd4", "#00186f", "#d35400", "#e81e62", "#e91e63", "#d500f9","#9c27b0"],
   'onColorSelected': function() {
-    if(this.color == '#FFFFFF'){
+    if(this.color == '#000000'){
       console.log("The user has selected the color: Rainbow")
-      this.element.css({'backgroundColor': 'White', 'color': 'White', 'background': 'linear-gradient(138deg, #ebf95e, #65f540, #2e85b5, #9147b5, #9a41b5, #fd1d1d, #fcb045)'});
+      this.element.css({'backgroundColor': 'Black', 'color': 'Black', 'background': 'linear-gradient(138deg, #ebf95e, #65f540, #2e85b5, #9147b5, #9a41b5, #fd1d1d, #fcb045)'});
     }
     else{
       console.log("The user has selected the color: " + this.color)
@@ -105,11 +130,11 @@ $("#dowcolor").colorPick({
 
 $("#datecolor").colorPick({
   'initialColor' : '#008080',
-  'palette': ["#ffffff", "#16a085", "#2ecc71", "#27ae60", "#3498db", "#2980b9", "#9b59b6", "#8e44ad", "#34495e", "#2c3e50", "#f1c40f", "#f39c12", "#e67e22", "#d35400", "#e74c3c", "#c0392b", "#ecf0f1"],
+  'palette': ["#000000", "#ff0000", "#00ff00", "#0000ff", "#ffffff", "#00c864", "#64dd17", "#008080", "#00bcd4", "#00186f", "#d35400", "#e81e62", "#e91e63", "#d500f9","#9c27b0"],
   'onColorSelected': function() {
-    if(this.color == '#FFFFFF'){
+    if(this.color == '#000000'){
       console.log("The user has selected the color: Rainbow")
-      this.element.css({'backgroundColor': 'White', 'color': 'White', 'background': 'linear-gradient(138deg, #ebf95e, #65f540, #2e85b5, #9147b5, #9a41b5, #fd1d1d, #fcb045)'});
+      this.element.css({'backgroundColor': 'Black', 'color': 'Black', 'background': 'linear-gradient(138deg, #ebf95e, #65f540, #2e85b5, #9147b5, #9a41b5, #fd1d1d, #fcb045)'});
     }
     else{
       console.log("The user has selected the color: " + this.color)
@@ -119,12 +144,12 @@ $("#datecolor").colorPick({
 });
 
 $("#msgcolor").colorPick({
-  'initialColor' : '#ECF0F1',
-  'palette': ["#ffffff", "#16a085", "#2ecc71", "#27ae60", "#3498db", "#2980b9", "#9b59b6", "#8e44ad", "#34495e", "#2c3e50", "#f1c40f", "#f39c12", "#e67e22", "#d35400", "#e74c3c", "#c0392b", "#ecf0f1"],
+  'initialColor' : '#000000',
+  'palette': ["#000000", "#ff0000", "#00ff00", "#0000ff", "#ffffff", "#00c864", "#64dd17", "#008080", "#00bcd4", "#00186f", "#d35400", "#e81e62", "#e91e63", "#d500f9","#9c27b0"],
   'onColorSelected': function() {
-    if(this.color == '#FFFFFF'){
+    if(this.color == '#000000'){
       console.log("The user has selected the color: Rainbow")
-      this.element.css({'backgroundColor': 'White', 'color': 'White', 'background': 'linear-gradient(138deg, #ebf95e, #65f540, #2e85b5, #9147b5, #9a41b5, #fd1d1d, #fcb045)'});
+      this.element.css({'backgroundColor': 'Black', 'color': 'Black', 'background': 'linear-gradient(138deg, #ebf95e, #65f540, #2e85b5, #9147b5, #9a41b5, #fd1d1d, #fcb045)'});
     }
     else{
       console.log("The user has selected the color: " + this.color)
@@ -133,4 +158,18 @@ $("#msgcolor").colorPick({
   }
 });
 
+
+/*
+char json[] = "{\"sensor\":\"gps\",\"time\":1351824120,\"data\":[48.756080,2.302038]}";
+
+ "{sensor:gps,time:1351824120,data:[48.756080,2.302038]}";
+
+DynamicJsonDocument doc(1024);
+deserializeJson(doc, json);
+
+const char* sensor = doc["sensor"];
+long time          = doc["time"];
+double latitude    = doc["data"][0];
+double longitude   = doc["data"][1];
+*/
 
