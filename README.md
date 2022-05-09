@@ -30,6 +30,8 @@ Click the image below to watch the video.
 * DS3231 RTC Module: <https://www.adafruit.com/product/3013>
 * ESP32 Dev Board: <https://www.adafruit.com/product/3405>
 * index.html, notfound.html, settings.html, time.html, timepicker.html
+* advanced.html, adcanced.css, circles.css, colorpick.css, colorPick.dark.theme.css
+* advanced.js, colorPick.js, jquery-3.1.1.min.js
 * Main.cpp, FontRobert.h, EEPROMHandler.h
 
 ## Authors
@@ -49,6 +51,8 @@ Contributors names and contact info
   * Minor visual update
 * 2.0.1
   * Webpage updates
+* 3.0
+  * Added advanced settings
 
 ## Acknowledgments
 
@@ -63,3 +67,4 @@ All credit attributes of the various authors of the libraries used.
 * [me-no-dev - AsyncTCP](https://github.com/me-no-dev/AsyncTCP)
 * [me-no-dev - ESPAsyncWebServer](https://github.com/me-no-dev/ESPAsyncWebServer)
 * [Rui Santos - Information & tutorials](https://RandomNerdTutorials.com)
+* [P Zakharchenko - ColorPick jQuery plugin](https://github.com/philzet/ColorPick.js)
