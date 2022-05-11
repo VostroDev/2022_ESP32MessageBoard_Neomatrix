@@ -75,6 +75,13 @@
         animation-direction: alternate;
       }
 
+      button:active{
+        background:red;
+        box-shadow: 0px 4px 241px 7px white;
+        -webkit-box-shadow: 0px 4px 241px 7px white;
+        -moz-box-shadow: 0px 4px 241px 7px white;
+      }
+
       @property --rotate {
         syntax: "<angle>";
         initial-value: 132deg;
@@ -501,38 +508,33 @@
         <li></li>
         <li></li>
       </ul>
-    </div>
-    <div class="wrapper">
+    </div >
+    <section class="wrapper">
       <div class="card">
-        <nav id="msgbox">
+        <div id="msgbox">
           <ul style='display:inline-block;min-width:280px;'>
             <li><a class="active" href="">Message</a></li>
             <li><a href="/time">Time</a></li>
             <li><a href="/settings">Settings</a></li>
           </ul>
-        </nav>
+        </div>
         <div>
           <h3 id="_message">Enter Your New Message:</h3>
-          <form id="data_form" name="frmText" action="javascript:SendData()">
-            <input maxlength="399" 
-                   name="Message" 
-                   type="text" 
-                   pattern="[a-zA-Z0-9!#$%&()*+,-.:;<=>?@_{}~/ ]{0,399}"
-                   title="Invalid input" 
-                   oninput="setCustomValidity(' ')"
-                   oninvalid='this.setCustomValidity("may not contain ^ | [ ] ` \\ \" single quotes")'
-                   onchange="try{setCustomValidity('')}catch(e){}"
-                   placeholder='New Message'><br/><br/>
-
-            <div class="range-slider">
-              <h3 id="_brigtness">Brightness:</h3>
-              <div id="brightnessbox"> 
-                <input class="range-slider__range" id="myRange" type="range" value="30" min="5" max="255" oninput="rangeSlideRW(this.value)"  onmousemove="rangeSlideRW(this.value)"></Input>
-                <span id="rangeValueRW" class="range-slider__value">30</span>
-              </div>
-            </div>
-            <button class ="neon-button" type="submit" >&#8652 send data</button>
+          <form id="data_form" name="frmText">
+            <input maxlength="399" name="Message" type="text" placeholder='New Message'><br/><br/>
           </form>
+        </div>
+
+        <div class="range-slider">
+          <h3 id="_brigtness">Brightness:</h3>
+          <div id="brightnessbox"> 
+            <input class="range-slider__range" id="myRange" type="range" value="30" min="5" max="255" oninput="rangeSlideRW(this.value)"  onmousemove="rangeSlideRW(this.value)"></Input>
+            <span id="rangeValueRW" class="range-slider__value">30</span>
+          </div>
+        </div>
+
+        <div>
+          <button onclick="SendData()">send data</button>
         </div>
 
         <div>
@@ -543,7 +545,7 @@
           <div id="snackbar">Display by. R Wilson</div>
         </div>
       </div>
-    </div>
+    </section>
   </body>
   
 </html>

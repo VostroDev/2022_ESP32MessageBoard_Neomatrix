@@ -1,14 +1,14 @@
 /*----------------------------------------------------------------------------------------
   30/12/2021
   Author: R WILSON
-  Platforms: ESP32 ONLY - ESP8266 not supported
-  Version: 4.0.1 - 18 Mar 2022
+  Platforms: ESP32
+  Version: 3.0.1 - 20 Apr 2022
   Language: C/C++/Arduino
-  v4.0.0 - large panel size version - FLEX PCB VERSION
-  v4.0.0 - validity check on message text
+  Working
   ----------------------------------------------------------------------------------------
   Description:
-  ESP32 connected to NeoPixel WS2812B LED matrix display (64x16 - 32x8 x 4 Panels)
+  ESP32 connected to NeoPixel WS2812B LED matrix display (32x8 - 4 Panels)
+  MATRIX_TYPE      VERTICAL_MATRIX
   RTC DS3231 I2C - SDA(21)gray/orange and SCL(22)purple/yellow
   TEMP SENSOR BUILD INTO DS3231
   ----------------------------------------------------------------------------------------
@@ -18,29 +18,38 @@
   ArduinoJson Benoit Blanchon: https://arduinojson.org              (lib version 6.18.5)
   me-no-dev: https://github.com/me-no-dev/AsyncTCP
   me-no-dev: https://github.com/me-no-dev/ESPAsyncWebServer
-  Rui Santos: https://RandomNerdTutorials.com - information resource
-  
   FastLED Daniel Garcia: https://fastled.io/                        (lib version
   LEDText A Liddiment https://github.com/AaronLiddiment/LEDText     (lib version 3.4.0)
   LEDMatrix A Liddiment https://github.com/AaronLiddiment/LEDMatrix (lib version )
     modified: J Skrotzky https://github.com/Jorgen-VikingGod/LEDMatrix Dec'21)
-   
+
+  P Zakharchenko: https://github.com/philzet/ColorPick.js - ColorPick jQuery plugin
+  Rui Santos: https://RandomNerdTutorials.com - information resource
+
   LOAD TO SPIFFS THESE EXTERNAL FILES:
     >> index.html notfound.html settings.html time.html timepicker.html 
   Connect to ESP32MessageBoard WIFI AP created by ESP32  
-  Open browser to http://192.168.4.1/
   Open browser to http://1.2.3.4/ 
-  Password: 12345678 or password
+  Password: password or 12345678
   Enter message to be displayed on the NeoMatrix scrolling display
 ----------------------------------------------------------------------------------------*/
 
 #include <Arduino.h>
 
-#include <WiFi.h>
-#include "SPIFFS.h"
-#include <AsyncTCP.h>
+#if defined(ESP32)
+  #include <WiFi.h>
+  #include <AsyncTCP.h>
+  #include "SPIFFS.h"
+  #define LED_PIN     13                    // NEOPIXEL connection
+  #define LED_BUILTIN 5                     // lolin buildin led on 5
+#elif defined(ESP8266)
+  #include <ESP8266WiFi.h>
+  #include <ESPAsyncTCP.h>
+  #include <FS.h>
+  #define LED_PIN     7                     // NEOPIXEL connection
+#endif
 #include <ESPAsyncWebServer.h>
-#include <AsyncElegantOTA.h>                // *OTA 
+#include <AsyncElegantOTA.h>                // *OTA
 #include <ArduinoJson.h>
 
 #include "EEPROMHandler.h"                  // Storing message into permanent memory
@@ -48,17 +57,19 @@
 #include <FastLED.h>
 #include <LEDMatrix.h>
 #include <LEDText.h>
-#include <FontP12x16RW.h>                    // "FontRobert.h" 5x7 font for 2 lines display
+#include "FontRobert.h"                     // for 5x7 font use <FontMatriseRW.h>
 
 #include <Wire.h>
 #include "RTClib.h"
 
+#define DISPLAY_TYPE_PCB                    //! DISPLAY_TYPE_PCB, DISPLAY_TYPE_FLEX
+
 #define BUF_SIZE    400                     // 400 out of 512 used
 #define PASS_BSIZE  9                       // 8 digit password
 #define PASS_EXIST  405                     // password $ address
-#define PASS_BEGIN  410                     // password value stored
+#define PASS_ADDR   410                     // password value stored
 #define P_CHAR      '`'
-#define BRT_ADDR    425                     // Brightness value stored (int = 4Bytes)
+#define BRT_ADDR    425                     // Brightness value stored
 
 #define TDUR_ADDR   426                     // Settings byte data EEPROM 23 bytes
 #define MSPEED_ADDR 427
@@ -84,28 +95,23 @@
 #define datRGB_ADDR 447
 #define msgRGB_ADDR 448
 
-#define BUZZER_PIN  19                      //TODO 19 for lolin board 23 38p-board Buzzer pin
-
-#define LED_PIN     27                      // NeoPixel pin 1/2 display
-#define LED2_PIN    13                      // NeoPixel pin other 1/2 display
-#define LED_BUILTIN 5                       // lolin buildin led on 5
+#define BUZZER_PIN  23                      // Buzzer pin
 
 #define VOLTS       5
-#define MAX_MA      2800                    // !change to 3000
+#define MAX_MA      500                     // !change to 3000
 
-#define MATRIX_TYPE          VERTICAL_ZIGZAG_MATRIX
-#define MATRIX_TILE_WIDTH   -64             // width of EACH NEOPIXEL MATRIX (not total display)
-#define MATRIX_TILE_HEIGHT   8              // height of each matrix
-#define MATRIX_TILE_H        1              // number of matrices horizontally (neg for reverse order)
-#define MATRIX_TILE_V        2              // number of matrices vertically (neg for reverse order)
-#define MATRIX_SIZE          (MATRIX_WIDTH*MATRIX_HEIGHT)
-#define MATRIX_PANEL         (MATRIX_WIDTH*MATRIX_HEIGHT)
-#define MATRIX_WIDTH         (MATRIX_TILE_WIDTH*MATRIX_TILE_H)
-#define MATRIX_HEIGHT        (MATRIX_TILE_HEIGHT*MATRIX_TILE_V)
-#define NUM_LEDS             (MATRIX_WIDTH*MATRIX_HEIGHT)
+#if defined (DISPLAY_TYPE_PCB)
+  #define MATRIX_WIDTH  -32
+  #define MATRIX_HEIGHT  -8
+  #define MATRIX_TYPE VERTICAL_MATRIX
+#elif defined (DISPLAY_TYPE_FLEX)
+  #define MATRIX_WIDTH  -32
+  #define MATRIX_HEIGHT   8
+  #define MATRIX_TYPE VERTICAL_ZIGZAG_MATRIX
+#endif
 
-#define EFF_CHAR_UP          0xd8           // in sprintf change 
-#define EFF_CHAR_DOWN        0xd9           // EFFECT_CHAR_UP to EFF_CHAR_UP in loop
+#define EFF_CHAR_UP          0xd8          // in sprintf change 
+#define EFF_CHAR_DOWN        0xd9          // EFFECT_CHAR_UP to EFF_CHAR_UP in loop
 #define EFF_CHAR_LEFT        0xda
 #define EFF_CHAR_RIGHT       0xdb
 
@@ -156,37 +162,37 @@ byte dowRGBHSV  = RW_RGB;                   // EFF_RGB,0xd3,0x54,0x00
 byte dateRGBHSV = RW_RGB;                   // EFF_RGB,0x00,0x80,0x80
 byte msgRGBHSV  = EFF_HSV_AH;
 
-char ssid[] = "LolinMessageBoard";          // Change to your name
+char ssid[] = "38PMessageBoard";            // Change to your name
 char password[PASS_BSIZE] = "password";     // dont change password here, change using web app
 
-RTC_DS3231 RTC;
 uint16_t h = 0;
 uint16_t m = 0;
 uint16_t dow = 0;
+RTC_DS3231 RTC;
 byte lastAlarm = 254;
 
 IPAddress ip(1, 2, 3, 4);
 IPAddress subnet(255, 255, 255, 0);
-AsyncWebServer server(80);
 
+AsyncWebServer server(80);
 DateTime now;                               // Decalre global variable for time
 char szTime[6];                             // hh:mm\0
 char daysOfTheWeek[7][4] = {"SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"};
-char curMessage[BUF_SIZE] = "Welcome";
-char newMessage[BUF_SIZE] = "Welcome";
-char newTime[17] = "09.05.2022 12:00";
+
+char curMessage[BUF_SIZE] = "Vostro";
+char newMessage[BUF_SIZE] = "Vostro";
+char newTime[17] = "01.01.2022 12:00";
 bool newMessageAvailable = true;
 bool newTimeAvailable = false;
 
-cLEDMatrix<MATRIX_TILE_WIDTH, MATRIX_TILE_HEIGHT, MATRIX_TYPE, MATRIX_TILE_H, MATRIX_TILE_V, VERTICAL_BLOCKS> leds;
+cLEDMatrix<MATRIX_WIDTH, MATRIX_HEIGHT, MATRIX_TYPE> leds;
 cLEDText ScrollingMsg, StaticgMsg, RTCErrorMessage;
 
-CRGB fleds[512];
+CRGB fleds[256];
 
 char txtDateA[] = { EFFECT_HSV_AH "\x00\xff\xff\xff\xff\xff" "12|30" };
 char txtDateB[] = { EFFECT_HSV_AH "\x00\xff\xff\xff\xff\xff" "12:30" };
 char szMesg[BUF_SIZE] = { EFFECT_FRAME_RATE "\x00" EFFECT_HSV_AH "\x00\xff\xff\xff\xff\xff" EFFECT_SCROLL_LEFT "     RW     "  EFFECT_CUSTOM_RC "\x01" };
-//char szMesg[BUF_SIZE] = { EFFECT_FRAME_RATE "\x00" EFFECT_HSV_AH "\x00\xff\xff\xff\xff\xff" EFFECT_SCROLL_LEFT "     WELCOME TO NORTHLINK COLLEGE     "  EFFECT_CUSTOM_RC "\x01" };
 
 String decToHexa(int n) {
   char hexaDeciNum[2];            // char array to store hexadecimal number
@@ -230,11 +236,11 @@ String handleTimeUpdate(uint8_t *data, size_t len){
 String handleMessageUpdate(uint8_t *data, size_t len){
   data[len] = '\0';
   String json = (char*)data;
-  
+ 
   DynamicJsonDocument doc(JSON_OBJECT_SIZE(2) + 350);
   DeserializationError error = deserializeJson(doc, json);  // Deserialize the JSON document
 
-  if (error){                                               // Test if parsing succeeds.
+  if (error){                                                // Test if parsing succeeds.
     Serial.print(F("deserializeJson() failed: "));
     Serial.println(error.f_str());
     return "deserializeJson error";
@@ -259,9 +265,9 @@ String handleSettingsUpdate(uint8_t *data, size_t len){
   String json = (char*)data;
   
   DynamicJsonDocument doc(JSON_OBJECT_SIZE(3) + 130);
-  DeserializationError error = deserializeJson(doc, json);  // Deserialize the JSON document
+  DeserializationError error = deserializeJson(doc, json);   // Deserialize the JSON document
 
-  if (error){                                               // Test if parsing succeeds.
+  if (error){                                                // Test if parsing succeeds.
     Serial.print(F("deserializeJson() failed: "));
     Serial.println(error.f_str());
     return "deserializeJson error";
@@ -278,10 +284,9 @@ String handleSettingsUpdate(uint8_t *data, size_t len){
     Serial.println(json);
     eepromWriteChar(BUF_SIZE, '\0');        // wall so message doesnt display password at max buffer pos
     eepromWriteChar(PASS_EXIST, P_CHAR);    // user password now exists
-    eepromWriteString(PASS_BEGIN, String(newpassword));
+    eepromWriteString(PASS_ADDR, String(newpassword));
     Serial.println("new password saved");
-    Serial.println(eepromReadChar(PASS_BEGIN));
-    Serial.println("\n\nRESTARTING in 8 Seconds...\n");
+    Serial.println(eepromReadChar(PASS_ADDR));
     WiFi.softAPdisconnect();
     delay(8000);
     ESP.restart();
@@ -441,10 +446,10 @@ void updateDefaultAPPassword(){
 
     eepromWriteChar(BUF_SIZE, '\0');           // wall so message doesnt display password at max buffer pos
     eepromWriteChar(PASS_EXIST, P_CHAR);       // user password now exists
-    eepromWriteString(PASS_BEGIN, "password"); // default password is "password"
+    eepromWriteString(PASS_ADDR, "password"); // default password is "password"
   }
 
-  String eeString = eepromReadString(PASS_BEGIN, PASS_BSIZE);
+  String eeString = eepromReadString(PASS_ADDR, PASS_BSIZE);
   eeString.toCharArray(password, eeString.length() + 1);
 
   Serial.print(eeString);
@@ -455,9 +460,9 @@ void updateDefaultAPPassword(){
 }
 
 void rtcErrorHandler(){
-  char txtRTCError[] = { EFFECT_FRAME_RATE "\x00" EFFECT_HSV_AH "\x00\xff\xff\xff\xff\xff" EFFECT_SCROLL_LEFT "     RTC NOT FOUND     "  EFFECT_CUSTOM_RC "\x99" }; //!char txtRTCError[BUF_SIZE]
-  RTCErrorMessage.SetFont(Font12x16Data);
-  RTCErrorMessage.Init(&leds, leds.Width(), RTCErrorMessage.FontHeight() + 1, 0, 0);
+  char txtRTCError[BUF_SIZE] = { EFFECT_FRAME_RATE "\x00" EFFECT_HSV_AH "\x00\xff\xff\xff\xff\xff" EFFECT_SCROLL_LEFT "     RTC NOT FOUND     "  EFFECT_CUSTOM_RC "\x99" };
+  RTCErrorMessage.SetFont(RobertFontData);
+  RTCErrorMessage.Init(&leds, leds.Width(), RTCErrorMessage.FontHeight() + 1, 0, 0); //? change to +2 for 5x7 font
   RTCErrorMessage.SetText((unsigned char *)txtRTCError, sizeof(txtRTCError) - 1);
   RTCErrorMessage.SetTextColrOptions(COLR_RGB | COLR_SINGLE, 0x00, 0x00, 0xff);
 
@@ -475,30 +480,25 @@ void rtcErrorHandler(){
 }
 
 void fxSinlon() //* Startup effects
-{ 
-  int gHue = 0, FRAMES_PER_SECOND = 120, FX_NUM_LEDS = 512;
-  FastLED.addLeds<WS2812B,LED_PIN,GRB>(fleds, 512).setCorrection(TypicalLEDStrip);   //std fastled for effects
-  FastLED.addLeds<WS2812B,LED2_PIN,GRB>(fleds, 512).setCorrection(TypicalLEDStrip);  //std fastled for effects
+{
+  FastLED.addLeds<WS2812B,LED_PIN,GRB>(fleds, 256).setCorrection(TypicalLEDStrip);  //std fastled for effects
   FastLED.clear(true);
-  FastLED.setBrightness(255);
-  
-  while(gHue <201){ 
-    fadeToBlackBy(fleds, FX_NUM_LEDS, 20); // a colored dot sweeping back and forth, with fading trails
-    int pos = beatsin16( 13, 0, FX_NUM_LEDS-1 );
+  FastLED.setBrightness(150);
+  int gHue = 0, NUM_LEDS = 256, FRAMES_PER_SECOND = 120;
+  while(gHue <201){
+    fadeToBlackBy( fleds, NUM_LEDS, 20); // a colored dot sweeping back and forth, with fading trails
+    int pos = beatsin16( 13, 0, NUM_LEDS-1 );
     fleds[pos] += CHSV( gHue, 255, 192);
     FastLED.show();  
     FastLED.delay(1000/FRAMES_PER_SECOND); 
     
     EVERY_N_MILLISECONDS( 20 ) { gHue++; } // slowly cycle the "base color" through the rainbow
-    EVERY_N_MILLISECONDS( 1000 ) {digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));}
   }
-  // back to Matrixled
-  FastLED.addLeds<WS2812B,  LED_PIN, GRB>(leds[0], 0,             leds.Size()/2).setCorrection(TypicalLEDStrip);//TypicalSMD5050
-  FastLED.addLeds<WS2812B, LED2_PIN, GRB>(leds[0], leds.Size()/2, leds.Size()/2).setCorrection(TypicalLEDStrip);
+  FastLED.addLeds<WS2812B, LED_PIN, GRB>(leds[0], leds.Size()).setCorrection(TypicalLEDStrip); // back to Matrixled
   FastLED.setBrightness(BRIGHTNESS);
 }
 
-static void MultiCoreTask1(void* pvParameters)
+static void MyTask1(void* pvParameters)
 {
   for (int i = 0; i < 6; i++)
   {
@@ -510,98 +510,100 @@ static void MultiCoreTask1(void* pvParameters)
   vTaskDelete(TaskHandle_1);    // Delete the task using the TaskHandle_1
 }
 
-void alarmCheck(){
-  if(dow > 0 && dow < 5)        // Mon -Thu
+void alarmCheck()
+{
+  if(dow > 0 && dow < 5)
   {
-    if(h == 8 && m == 0 && lastAlarm != 0){
+    if(h == 8 && m == 0 && lastAlarm != 0) {
       /* Task function, name, stackSize, parameter, priority, handler, core 0 */   
-      xTaskCreatePinnedToCore(MultiCoreTask1,"Task1",10000,NULL,1,&TaskHandle_1,0);  
+      xTaskCreatePinnedToCore(MyTask1,"Task1",10000,NULL,1,&TaskHandle_1,0);  
       lastAlarm = 0;
       return;
     }
-    if(h == 10 && m == 0 && lastAlarm != 1){
-      xTaskCreatePinnedToCore(MultiCoreTask1,"Task1",10000,NULL,1,&TaskHandle_1,0);  
+    if(h == 10 && m == 0 && lastAlarm != 1) {
+      xTaskCreatePinnedToCore(MyTask1,"Task1",10000,NULL,1,&TaskHandle_1,0);  
       lastAlarm = 1;
       return;
     }
-    if(h == 10 && m == 20 && lastAlarm != 2){
-      xTaskCreatePinnedToCore(MultiCoreTask1,"Task1",10000,NULL,1,&TaskHandle_1,0);  
+    if(h == 10 && m == 20 && lastAlarm != 2) {
+      xTaskCreatePinnedToCore(MyTask1,"Task1",10000,NULL,1,&TaskHandle_1,0);  
       lastAlarm = 2;
       return;
     }
-    if(h == 12 && m == 20 && lastAlarm != 3){
-      xTaskCreatePinnedToCore(MultiCoreTask1,"Task1",10000,NULL,1,&TaskHandle_1,0);  
+    if(h == 12 && m == 20 && lastAlarm != 3) {
+      xTaskCreatePinnedToCore(MyTask1,"Task1",10000,NULL,1,&TaskHandle_1,0);  
       lastAlarm = 3;
       return;
     }
-    if(h == 13 && m == 0 && lastAlarm != 4){
-      xTaskCreatePinnedToCore(MultiCoreTask1,"Task1",10000,NULL,1,&TaskHandle_1,0);  
+    if(h == 13 && m == 0 && lastAlarm != 4) {
+      xTaskCreatePinnedToCore(MyTask1,"Task1",10000,NULL,1,&TaskHandle_1,0);  
       lastAlarm = 4;
       return;
     }
-    if(h == 14 && m == 20 && lastAlarm != 5){
-      xTaskCreatePinnedToCore(MultiCoreTask1,"Task1",10000,NULL,1,&TaskHandle_1,0);  
+    if(h == 14 && m == 20 && lastAlarm != 5) {
+      xTaskCreatePinnedToCore(MyTask1,"Task1",10000,NULL,1,&TaskHandle_1,0);  
       lastAlarm = 5;
       return;
     }
-    if(h == 14 && m == 40 && lastAlarm != 6){
-      xTaskCreatePinnedToCore(MultiCoreTask1,"Task1",10000,NULL,1,&TaskHandle_1,0);  
+    if(h == 14 && m == 40 && lastAlarm != 6) {
+      xTaskCreatePinnedToCore(MyTask1,"Task1",10000,NULL,1,&TaskHandle_1,0);  
       lastAlarm = 6;
       return;
     }
-    if(h == 15 && m == 00 && lastAlarm != 7){
-      xTaskCreatePinnedToCore(MultiCoreTask1,"Task1",10000,NULL,1,&TaskHandle_1,0);  
+    if(h == 15 && m == 00 && lastAlarm != 7) {
+      xTaskCreatePinnedToCore(MyTask1,"Task1",10000,NULL,1,&TaskHandle_1,0);  
       lastAlarm = 7;
       return;
     }
-    if(h == 15 && m == 30 && lastAlarm != 8){
-      xTaskCreatePinnedToCore(MultiCoreTask1,"Task1",10000,NULL,1,&TaskHandle_1,0);  
+    if(h == 15 && m == 30 && lastAlarm != 8) {
+      xTaskCreatePinnedToCore(MyTask1,"Task1",10000,NULL,1,&TaskHandle_1,0);  
       lastAlarm = 8;
       return;
     }
-    if(h == 15 && m == 23 && lastAlarm != 9){
-      xTaskCreatePinnedToCore(MultiCoreTask1,"Task1",10000,NULL,1,&TaskHandle_1,0);  
+    if(h == 15 && m == 23 && lastAlarm != 9) {
+      xTaskCreatePinnedToCore(MyTask1,"Task1",10000,NULL,1,&TaskHandle_1,0);  
       lastAlarm = 9;
       return;
     }
   }
-  else if (dow == 5){            // Fri
-    if(h == 8 && m == 0 && lastAlarm != 100){
-      xTaskCreatePinnedToCore(MultiCoreTask1,"Task1",10000,NULL,1,&TaskHandle_1,0);  
+  else if (dow == 5)
+  {
+    if(h == 8 && m == 0 && lastAlarm != 100) {
+      xTaskCreatePinnedToCore(MyTask1,"Task1",10000,NULL,1,&TaskHandle_1,0);  
       lastAlarm = 100;
       return;
     }
-    if(h == 9 && m == 40 && lastAlarm != 101){
-      xTaskCreatePinnedToCore(MultiCoreTask1,"Task1",10000,NULL,1,&TaskHandle_1,0);  
+    if(h == 9 && m == 40 && lastAlarm != 101) {
+      xTaskCreatePinnedToCore(MyTask1,"Task1",10000,NULL,1,&TaskHandle_1,0);  
       lastAlarm = 101;
       return;
     }
-    if(h == 10 && m == 0 && lastAlarm != 102){
-      xTaskCreatePinnedToCore(MultiCoreTask1,"Task1",10000,NULL,1,&TaskHandle_1,0);  
+    if(h == 10 && m == 0 && lastAlarm != 102) {
+      xTaskCreatePinnedToCore(MyTask1,"Task1",10000,NULL,1,&TaskHandle_1,0);  
       lastAlarm = 102;
       return;
     }
-    if(h == 11 && m == 45 && lastAlarm != 103){
-      xTaskCreatePinnedToCore(MultiCoreTask1,"Task1",10000,NULL,1,&TaskHandle_1,0);  
+    if(h == 12 && m == 0 && lastAlarm != 103) {
+      xTaskCreatePinnedToCore(MyTask1,"Task1",10000,NULL,1,&TaskHandle_1,0);  
       lastAlarm = 103;
       return;
     }
-    if(h == 12 && m == 20 && lastAlarm != 104){
-      xTaskCreatePinnedToCore(MultiCoreTask1,"Task1",10000,NULL,1,&TaskHandle_1,0);  
+    if(h == 12 && m == 20 && lastAlarm != 104) {
+      xTaskCreatePinnedToCore(MyTask1,"Task1",10000,NULL,1,&TaskHandle_1,0);  
       lastAlarm = 104;
       return;
     }
   }
 }
 
-void setup(){
-  delay(300);
+void setup()
+{
   Serial.begin(115200);
   Serial.println("");
   Serial.println("\n\nScrolling display from your Internet Browser");
 
   // STARTUP BEEPS
-  xTaskCreatePinnedToCore(MultiCoreTask1,"Task1",10000,NULL,1,&TaskHandle_1,0);
+  xTaskCreatePinnedToCore(MyTask1,"Task1",10000,NULL,1,&TaskHandle_1,0);
   
   //  EEPROM
   EEPROM.begin(512);
@@ -612,34 +614,35 @@ void setup(){
   Serial.print("Message: ");
   Serial.println(curMessage);
 
-  BRIGHTNESS = eepromReadInt(BRT_ADDR);                           // read Neomatrix brightness value
-  Serial.print("NeoMatrix Brightness set to ");
+  BRIGHTNESS = eepromReadByte(BRT_ADDR);                          // read Neomatrix brightness value
+  Serial.print("NeoMatrix Brightness set to ");                   // done in line 318
   Serial.println(BRIGHTNESS);
   
-  //  GET ADVANCED SETTINGS FROM EEPROM
-  getSettings();                                                  
+  getSettings();                                                  // get advanced settings from EEPROM
 
   //  START DISPLAY
   Serial.println("\nNEOMATRIX DIPLAY STARTED");
-  FastLED.setMaxPowerInVoltsAndMilliamps(VOLTS, MAX_MA);         //! 
-  FastLED.addLeds<WS2812B,  LED_PIN, GRB>(leds[0], 0,             leds.Size()/2).setCorrection(TypicalLEDStrip);//TypicalSMD5050
-  FastLED.addLeds<WS2812B, LED2_PIN, GRB>(leds[0], leds.Size()/2, leds.Size()/2).setCorrection(TypicalLEDStrip);
-
+ // FastLED.setMaxPowerInVoltsAndMilliamps(VOLTS, MAX_MA);         //! 
+  FastLED.addLeds<WS2812B, LED_PIN, GRB>(leds[0], leds.Size()).setCorrection(TypicalLEDStrip); //TypicalSMD5050
   FastLED.setBrightness(BRIGHTNESS);
   FastLED.clear(true);
 
-  ScrollingMsg.SetFont(Font12x16Data);
-  ScrollingMsg.Init(&leds, leds.Width(), ScrollingMsg.FontHeight() + 1, 0, 0);
+  ScrollingMsg.SetFont(RobertFontData);
+  ScrollingMsg.Init(&leds, leds.Width(), ScrollingMsg.FontHeight() + 1, 0, 0); //? change to +2 for 5x7 font
   ScrollingMsg.SetText((unsigned char *)szMesg, sizeof(szMesg) - 1);
   ScrollingMsg.SetTextColrOptions(COLR_RGB | COLR_SINGLE, 0x00, 0x00, 0xff);
 
-  StaticgMsg.SetFont(Font12x16Data);
-  StaticgMsg.Init(&leds, leds.Width(), ScrollingMsg.FontHeight() + 1, 0, 0); // >> 1 pixel
+  StaticgMsg.SetFont(RobertFontData);
+  StaticgMsg.Init(&leds, leds.Width(), ScrollingMsg.FontHeight() + 1, 1, 0); // >> 1 pixel //? change to +2 for 5x7 font
   StaticgMsg.SetText((unsigned char *)txtDateA, sizeof(txtDateA) - 1);
   StaticgMsg.SetTextColrOptions(COLR_RGB | COLR_SINGLE, 0x00, 0x00, 0xff);
   
   //  RTC  
-  Wire.begin();                             // DS3231 RTC I2C - SDA(21) and SCL(22)
+  #if defined(ESP32)
+    Wire.begin();                           // DS3231 RTC I2C - SDA(21) and SCL(22)
+  #elif defined(ESP8266)
+    Wire.begin(D1, D2);                     // ESP8266
+  #endif
 
   Serial.print("\nRTC STARTING >>> ");                                  
   if (! RTC.begin()) {
@@ -735,19 +738,19 @@ void setup(){
   Serial.println("SERVER STARTED");
 
   //  DISPLAY WELCOME MESSAGE
-  fxSinlon();                                 // Display special startup effect
+  fxSinlon();                                 //* Display special startup effect
   while(ScrollingMsg.UpdateText() != 1)
   {
     FastLED.show();
     delay(30);
-    EVERY_N_MILLISECONDS( 1000 ) {digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));}
   }
   ScrollingMsg.SetText((unsigned char *)szMesg, sizeof(szMesg) - 1);   // reset to start of string
 
   //Serial.println(TIMER_BASE_CLK);
 }
 
-void loop(){
+void loop()
+{
   static uint32_t timeLast = 0;               // Heartbeat
   static uint8_t t = 0;                       // temperature
   static uint8_t updatetemp = 11;             // so updates temp at startup
@@ -755,15 +758,15 @@ void loop(){
   if (millis() - timeLast >= 1000 && msgOnly == 0){
     digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
     timeLast = millis();
-
     now = RTC.now();                          // Update the global var with current time 
     m = now.minute();  
     h = now.hour();
     dow = now.dayOfTheWeek();
 
-    //txtDateA[7] = '2';// HRS//txtDateA[8] = '3';// HRS//txtDateA[10] = '5';// MIN//txtDateA[11] = '9';// MIN
-    sprintf(txtDateA, "%c%c%c%c%c%c%c%02d%c%02d", EFF_HSV_AH,0x00,0xff,0xff,0xff,0xff,0xff,h,'|',m);
-    sprintf(txtDateB, "%c%c%c%c%c%c%c%02d%c%02d", EFF_HSV_AH,0x00,0xff,0xff,0xff,0xff,0xff,h,':',m);
+    //!char temp[] = "0xff";sprintf(temp, "0x%02X", 255);Serial.println(temp);
+
+    sprintf(txtDateA, "%c%c%c%c%c%c%c%02d%c%02d", timeRGBHSV,timeR,timeG,timeB,0xff,0xff,0xff,h,'|',m);
+    sprintf(txtDateB, "%c%c%c%c%c%c%c%02d%c%02d", timeRGBHSV,timeR,timeG,timeB,0xff,0xff,0xff,h,':',m);
 
     if(curMessage[0] == '\0'){  // when no message
       sprintf(szMesg, "%c%c%c%c%c%c%c%c%c%c%s%02d%c%02d%c%c%c%c%c%c%c%c%c%c%c%c%s%02d%c%c%c%c%c%c%c%c%c%c%c%c%s%s%c%c%c%c%c%c%c%c%c%c%c%s%02d%c%02d%c%c%c%s%c%c",
@@ -793,17 +796,18 @@ void loop(){
     alarmCheck();
   }
 
+  
   if (msgOnly == 1) { // Message only display
     sprintf(szMesg, "%c%c%c%c%c%c%c%c%c%c%s%s%s%c%c",EFF_FRAME_RATE,msgSpeed,msgRGBHSV,msgR,msgG,msgB,0xff,0xff,0xff,EFF_SCROLL_LEFT,"            ",curMessage,"       ",EFF_CUSTOM_RC,0x01);
   }
-
+  
   if (newMessageAvailable){
     strcpy(curMessage, newMessage);           // Copy new message to display
     eepromWriteString(0, newMessage);         // Write String to EEPROM Address 0
     newMessageAvailable = false;
     Serial.println("new message received, updated EEPROM\n");
     delay(100);
-    eepromWriteInt(BRT_ADDR, BRIGHTNESS);    // Write new brightness value
+    eepromWriteByte(BRT_ADDR, BRIGHTNESS);    // Write new brightness value
     FastLED.setBrightness(BRIGHTNESS);
     Serial.print("NeoMatrix Brightness set to ");
     Serial.println(BRIGHTNESS);
@@ -819,14 +823,11 @@ void loop(){
   }
 
   rc = ScrollingMsg.UpdateText();
-  if (rc == -1 || rc == 1)  // -1 means end of char array, 1 means end of msg because custom rc is received
-  {
+  if (rc == -1 || rc == 1){  // -1 means end of char array, 1 means end of msg because custom rc is received
     ScrollingMsg.SetText((unsigned char *)szMesg, sizeof(szMesg) - 1);
   }
-  else if (rc == 2)                               // EFFECT_CUSTOM_RC "\x02"
-  {
-    for (int j = 2; j < timeDur; j++)                  // want to start on even number to run drawline
-    {
+  else if (rc == 2){                               // EFFECT_CUSTOM_RC "\x02"
+    for (int j = 2; j < timeDur; j++){                  // want to start on even number to run drawline
       if(j % 2 == 0){ //even
         StaticgMsg.SetText((unsigned char *)txtDateA, sizeof(txtDateA) - 1);
         StaticgMsg.UpdateText();
@@ -837,15 +838,13 @@ void loop(){
         StaticgMsg.UpdateText();
       }
       FastLED.show();
-      digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
       delay(1000);
     }
   }
-  else
-  {
+  else{
     FastLED.show();
   }
-  //!delay(5);
+  delay(5);
 }
 
 /*

@@ -402,6 +402,13 @@
         animation-direction: alternate;
       }
 
+      button:active{
+        background:red;
+        box-shadow: 0px 4px 241px 7px white;
+        -webkit-box-shadow: 0px 4px 241px 7px white;
+        -moz-box-shadow: 0px 4px 241px 7px white;
+      }
+
       ul {
         list-style-type: none;
         margin: 0;
@@ -491,13 +498,13 @@
     </div>
 
     <div class="card">
-      <nav id="msgbox">
+      <div id="msgbox">
         <ul style="display: inline-block; min-width: 280px">
           <li><a href="/">Message</a></li>
           <li><a class="active" href="/time">Time</a></li>
           <li><a href="/settings">Settings</a></li>
         </ul>
-      </nav>
+      </div>
       <div>
         <h3>Set Current Time and Date:</h3>
         <form id="data_form" name="frmText">

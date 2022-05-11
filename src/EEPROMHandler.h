@@ -56,6 +56,17 @@ String eepromReadString(int address, int16_t buffer_size){
   int eepromReadInt(int address){
     return EEPROM.readInt(address);
   }
+
+  void eepromWriteByte(int address, byte data){
+    EEPROM.write(address,data);
+    EEPROM.commit();                            // save to EEPROM flash
+    delay(100);
+  }
+
+  byte eepromReadByte(int address){
+    return EEPROM.read(address);
+  }
+  
 #elif defined(ESP8266)
   void eepromWriteChar(int address,char data){
     EEPROM.write(address,data);

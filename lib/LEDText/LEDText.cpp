@@ -28,6 +28,7 @@ Even the basic examples need 12k rom & 4k ram
 #define  UC_SCROLL_UP          0xde
 #define  UC_SCROLL_DOWN        0xdf
 
+#define  RW_RGB                0xd0    //!RWILSON
 #define  UC_RGB                0xe0
 #define  UC_HSV                0xe1
 #define  UC_RGB_CV             0xe2
@@ -214,7 +215,7 @@ void cLEDText::DecodeOptions(uint16_t *tp, uint16_t *opt, uint8_t *backDim, uint
       col1[0] = m_pText[*tp + 1];
       col1[1] = m_pText[*tp + 2];
       col1[2] = m_pText[*tp + 3];
-      *tp += 3;
+      *tp += 3;                                
       if ((*opt & COLR_GRAD) == COLR_GRAD)
       {
         col2[0] = m_pText[*tp + 1];
@@ -223,6 +224,13 @@ void cLEDText::DecodeOptions(uint16_t *tp, uint16_t *opt, uint8_t *backDim, uint
         *tp += 3;
       }
       break;
+    case RW_RGB: //!R WILSON
+    *opt = (*opt & (~COLR_MASK)) | ((((uint16_t)m_pText[*tp] & 0x0f) << 6) & COLR_MASK);
+    col1[0] = m_pText[*tp + 1];
+    col1[1] = m_pText[*tp + 2];
+    col1[2] = m_pText[*tp + 3];
+    *tp += 6;                                
+    break;
     case UC_COLR_EMPTY:
       *opt = (*opt & (~COLR_MASK)) | COLR_EMPTY;
       break;
