@@ -194,27 +194,27 @@ char txtDateA[] = { EFFECT_HSV_AH "\x00\xff\xff\xff\xff\xff" "12|30" };
 char txtDateB[] = { EFFECT_HSV_AH "\x00\xff\xff\xff\xff\xff" "12:30" };
 char szMesg[BUF_SIZE] = { EFFECT_FRAME_RATE "\x00" EFFECT_HSV_AH "\x00\xff\xff\xff\xff\xff" EFFECT_SCROLL_LEFT "     RW     "  EFFECT_CUSTOM_RC "\x01" };
 
-String decToHexa(int n) {
-  char hexaDeciNum[2];            // char array to store hexadecimal number
-  int i = 0;                      // counter for hexadecimal number array
-    while (n != 0) {
-      int temp = 0;               // temporary variable to store remainder
-      temp = n % 16;              // storing remainder in temp variable.
-      if (temp < 10) {            // check if temp < 10
-         hexaDeciNum[i] = temp + 48;
-         i++;
-      }
-      else {
-        hexaDeciNum[i] = temp + 55;
-        i++;
-      }
-      hexaDeciNum[i]='\0';
-      n = n / 16;
-    }
-     //for (int j = i - 1; j >= 0; j--) // printing hexadecimal number array in reverse order
-     //cout << hexaDeciNum[j];
-  return hexaDeciNum;
-}
+// String decToHexa(int n) {
+//   char hexaDeciNum[2];            // char array to store hexadecimal number
+//   int i = 0;                      // counter for hexadecimal number array
+//     while (n != 0) {
+//       int temp = 0;               // temporary variable to store remainder
+//       temp = n % 16;              // storing remainder in temp variable.
+//       if (temp < 10) {            // check if temp < 10
+//          hexaDeciNum[i] = temp + 48;
+//          i++;
+//       }
+//       else {
+//         hexaDeciNum[i] = temp + 55;
+//         i++;
+//       }
+//       hexaDeciNum[i]='\0';
+//       n = n / 16;
+//     }
+//      //for (int j = i - 1; j >= 0; j--) // printing hexadecimal number array in reverse order
+//      //cout << hexaDeciNum[j];
+//   return hexaDeciNum;
+// }
 
 String handleTimeUpdate(uint8_t *data, size_t len){
   data[len] = '\0';

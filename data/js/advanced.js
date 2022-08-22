@@ -32,6 +32,16 @@ function SendData() {
   }
 
   var json = JSON.stringify({ 'timedur':timedur,
+              'timecolor':[timecolor['red'] , parseInt(timecolor['green']*0.75), parseInt(timecolor['blue']*0.25)] , 
+              'tempcolor':[tempcolor['red'], parseInt(tempcolor['green']*0.75), parseInt(tempcolor['blue']*0.25)] ,                            
+              'dowcolor':[dowcolor['red'],  parseInt(dowcolor['green']*0.75), parseInt(dowcolor['blue']*0.25)] , 
+              'datecolor':[datecolor['red'], parseInt(datecolor['green']*0.75), parseInt(datecolor['blue']*0.25)] , 
+              'msgcolor':[msgcolor['red'], parseInt(msgcolor['green']*0.75), parseInt(msgcolor['blue']*0.25)] , 
+              'msgspeed':msgspeed,
+              'msgonly':msgonly
+            });
+    /*
+    var json = JSON.stringify({ 'timedur':timedur,
                               'timecolor':[timecolor['red'], timecolor['green'], timecolor['blue']] , 
                               'tempcolor':[tempcolor['red'], tempcolor['green'], tempcolor['blue']] ,                            
                               'dowcolor':[dowcolor['red'],  dowcolor['green'], dowcolor['blue']] , 
@@ -40,6 +50,7 @@ function SendData() {
                               'msgspeed':msgspeed,
                               'msgonly':msgonly
                             });
+    */
 
   //console.log("Data sent: " + json);
 
