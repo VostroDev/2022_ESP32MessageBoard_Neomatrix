@@ -482,12 +482,12 @@ void fxSinlon() //* Startup effects
   FastLED.clear(true);
   FastLED.setBrightness(255);
   
-  while(gHue <201){ 
+  while(gHue <201){
     fadeToBlackBy(fleds, FX_NUM_LEDS, 20); // a colored dot sweeping back and forth, with fading trails
     int pos = beatsin16( 13, 0, FX_NUM_LEDS-1 );
     fleds[pos] += CHSV( gHue, 255, 192);
-    FastLED.show();  
-    FastLED.delay(1000/FRAMES_PER_SECOND); 
+    FastLED.show();
+    FastLED.delay(1000/FRAMES_PER_SECOND);
     
     EVERY_N_MILLISECONDS( 20 ) { gHue++; } // slowly cycle the "base color" through the rainbow
     EVERY_N_MILLISECONDS( 1000 ) {digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));}
