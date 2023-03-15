@@ -32,6 +32,12 @@
   Open browser to http://1.2.3.4/ 
   Password: 12345678 or password
   Enter message to be displayed on the NeoMatrix scrolling display
+
+   LED PINS 25 26 27 14
+   ________ ________                                 ________ ________  ________ ________
+  |________'________| (27) < 8x64x1  8x64x2 > 25,26 |________'________||________'________|
+  |________'________| (13) < 8x64x1  8x64x2 > 27,14 |________'________||________'________|
+      MATRIX_2x2                                                  MATRIX_4x2                                     
 ----------------------------------------------------------------------------------------*/
 
 #include <Arduino.h>
@@ -84,22 +90,23 @@
 #define datRGB_ADDR 447
 #define msgRGB_ADDR 448
 
-#define BUZZER_PIN  19                      //TODO 19 for lolin board 23 38p-board Buzzer pin
-
-#define LED_PIN     27                      // NeoPixel pin 1/2 display
-#define LED2_PIN    13                      // NeoPixel pin other 1/2 display
-#define LED_BUILTIN 5                       // lolin buildin led on 5
-
-#define VOLTS       5
-#define MAX_MA      2800                    // !change to 3000
-
+#define BUZZER_PIN  23                      //TODO 19 for lolin board 23 38p-board Buzzer pin
+#define LED_PIN              25             // NeoPixel pin TOP LEFT  1/4 display
+#define LED2_PIN             26             // NeoPixel pin TOP RIGHT 1/4 display
+#define LED3_PIN             27             // NeoPixel pin BOT LEFT  1/4 display
+#define LED4_PIN             14             // NeoPixel pin BOT RIGHT 1/4 display
+#define LED_BUILTIN          5              // lolin buildin led on 5
+#define VOLTS                5
+#define MAX_MA               300            // !change to 3000
 #define MATRIX_TYPE          VERTICAL_ZIGZAG_MATRIX
 #define MATRIX_TILE_WIDTH   -64             // width of EACH NEOPIXEL MATRIX (not total display)
 #define MATRIX_TILE_HEIGHT   8              // height of each matrix
-#define MATRIX_TILE_H        1              // number of matrices horizontally (neg for reverse order)
+#define MATRIX_TILE_H        2 //1          // number of matrices horizontally (neg for reverse order)
 #define MATRIX_TILE_V        2              // number of matrices vertically (neg for reverse order)
+
 #define MATRIX_SIZE          (MATRIX_WIDTH*MATRIX_HEIGHT)
-#define MATRIX_PANEL         (MATRIX_WIDTH*MATRIX_HEIGHT)
+#define MATRIX_PANEL         (MATRIX_WIDTH*MATRIX_HEIGHT) 
+#define MATRIX_TILE          abs(MATRIX_TILE_WIDTH*MATRIX_TILE_HEIGHT) //Number os LEDS in one tile
 #define MATRIX_WIDTH         (MATRIX_TILE_WIDTH*MATRIX_TILE_H)
 #define MATRIX_HEIGHT        (MATRIX_TILE_HEIGHT*MATRIX_TILE_V)
 #define NUM_LEDS             (MATRIX_WIDTH*MATRIX_HEIGHT)
@@ -156,7 +163,7 @@ byte dowRGBHSV  = RW_RGB;                   // EFF_RGB,0xd3,0x54,0x00
 byte dateRGBHSV = RW_RGB;                   // EFF_RGB,0x00,0x80,0x80
 byte msgRGBHSV  = EFF_HSV_AH;
 
-char ssid[] = "LolinMessageBoard";          // Change to your name
+char ssid[] = "DoitMessageBoard";          // Change to your name
 char password[PASS_BSIZE] = "password";     // dont change password here, change using web app
 
 RTC_DS3231 RTC;
@@ -181,11 +188,11 @@ bool newTimeAvailable = false;
 cLEDMatrix<MATRIX_TILE_WIDTH, MATRIX_TILE_HEIGHT, MATRIX_TYPE, MATRIX_TILE_H, MATRIX_TILE_V, VERTICAL_BLOCKS> leds;
 cLEDText ScrollingMsg, StaticgMsg, RTCErrorMessage;
 
-CRGB fleds[512];
+CRGB fleds[2048];
 
-char txtDateA[] = { EFFECT_HSV_AH "\x00\xff\xff\xff\xff\xff" "12|30" };
-char txtDateB[] = { EFFECT_HSV_AH "\x00\xff\xff\xff\xff\xff" "12:30" };
-char szMesg[BUF_SIZE] = { EFFECT_FRAME_RATE "\x00" EFFECT_HSV_AH "\x00\xff\xff\xff\xff\xff" EFFECT_SCROLL_LEFT "     RW     "  EFFECT_CUSTOM_RC "\x01" };
+char txtDateA[] = { EFFECT_HSV_AH "\x00\xff\xff\xff\xff\xff" "09|45 13^ " };
+char txtDateB[] = { EFFECT_HSV_AH "\x00\xff\xff\xff\xff\xff" "09:45 13^ " };
+char szMesg[BUF_SIZE] = { EFFECT_FRAME_RATE "\x00" EFFECT_HSV_AH "\x00\xff\xff\xff\xff\xff" EFFECT_SCROLL_LEFT "           RW           "  EFFECT_CUSTOM_RC "\x01" };
 //char szMesg[BUF_SIZE] = { EFFECT_FRAME_RATE "\x00" EFFECT_HSV_AH "\x00\xff\xff\xff\xff\xff" EFFECT_SCROLL_LEFT "     WELCOME TO NORTHLINK COLLEGE     "  EFFECT_CUSTOM_RC "\x01" };
 
 String decToHexa(int n) {
@@ -476,11 +483,15 @@ void rtcErrorHandler(){
 
 void fxSinlon() //* Startup effects
 { 
-  int gHue = 0, FRAMES_PER_SECOND = 120, FX_NUM_LEDS = 512;
-  FastLED.addLeds<WS2812B,LED_PIN,GRB>(fleds, 512).setCorrection(TypicalLEDStrip);   //std fastled for effects
-  FastLED.addLeds<WS2812B,LED2_PIN,GRB>(fleds, 512).setCorrection(TypicalLEDStrip);  //std fastled for effects
+
+  int gHue = 0, FRAMES_PER_SECOND = 120, FX_NUM_LEDS = 1024;
+  FastLED.addLeds<WS2812B,LED_PIN,GRB>(fleds, 1024).setCorrection(TypicalLEDStrip);   //std fastled for effects
+  FastLED.addLeds<WS2812B,LED2_PIN,GRB>(fleds, 1024).setCorrection(TypicalLEDStrip);  //std fastled for effects
+  FastLED.addLeds<WS2812B,LED3_PIN,GRB>(fleds, 1024).setCorrection(TypicalLEDStrip);  //std fastled for effects
+  FastLED.addLeds<WS2812B,LED4_PIN,GRB>(fleds, 1024).setCorrection(TypicalLEDStrip);  //std fastled for effects
+
   FastLED.clear(true);
-  FastLED.setBrightness(255);
+  FastLED.setBrightness(15);
   
   while(gHue <201){
     fadeToBlackBy(fleds, FX_NUM_LEDS, 20); // a colored dot sweeping back and forth, with fading trails
@@ -493,9 +504,12 @@ void fxSinlon() //* Startup effects
     EVERY_N_MILLISECONDS( 1000 ) {digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));}
   }
   // back to Matrixled
-  FastLED.addLeds<WS2812B,  LED_PIN, GRB>(leds[0], 0,             leds.Size()/2).setCorrection(TypicalLEDStrip);//TypicalSMD5050
-  FastLED.addLeds<WS2812B, LED2_PIN, GRB>(leds[0], leds.Size()/2, leds.Size()/2).setCorrection(TypicalLEDStrip);
-  FastLED.setBrightness(BRIGHTNESS);
+  FastLED.addLeds<WS2812B,  LED_PIN, GRB>(leds[0], 0,             MATRIX_TILE).setCorrection(TypicalLEDStrip);//TypicalSMD5050
+  FastLED.addLeds<WS2812B, LED2_PIN, GRB>(leds[0], 1*MATRIX_TILE, MATRIX_TILE).setCorrection(TypicalLEDStrip);
+  FastLED.addLeds<WS2812B, LED3_PIN, GRB>(leds[0], 2*MATRIX_TILE, MATRIX_TILE).setCorrection(TypicalLEDStrip);
+  FastLED.addLeds<WS2812B, LED4_PIN, GRB>(leds[0], 3*MATRIX_TILE, MATRIX_TILE).setCorrection(TypicalLEDStrip);
+
+  FastLED.setBrightness(15);//!FastLED.setBrightness(BRIGHTNESS)
 }
 
 static void MultiCoreTask1(void* pvParameters)
@@ -621,11 +635,14 @@ void setup(){
 
   //  START DISPLAY
   Serial.println("\nNEOMATRIX DIPLAY STARTED");
-  FastLED.setMaxPowerInVoltsAndMilliamps(VOLTS, MAX_MA);         //! 
-  FastLED.addLeds<WS2812B,  LED_PIN, GRB>(leds[0], 0,             leds.Size()/2).setCorrection(TypicalLEDStrip);//TypicalSMD5050
-  FastLED.addLeds<WS2812B, LED2_PIN, GRB>(leds[0], leds.Size()/2, leds.Size()/2).setCorrection(TypicalLEDStrip);
 
-  FastLED.setBrightness(BRIGHTNESS);
+  FastLED.setMaxPowerInVoltsAndMilliamps(VOLTS, MAX_MA);         //! 
+  FastLED.addLeds<WS2812B,  LED_PIN, GRB>(leds[0], 0,             MATRIX_TILE).setCorrection(TypicalLEDStrip);//TypicalSMD5050
+  FastLED.addLeds<WS2812B, LED2_PIN, GRB>(leds[0], 1*MATRIX_TILE, MATRIX_TILE).setCorrection(TypicalLEDStrip);
+  FastLED.addLeds<WS2812B, LED3_PIN, GRB>(leds[0], 2*MATRIX_TILE, MATRIX_TILE).setCorrection(TypicalLEDStrip);
+  FastLED.addLeds<WS2812B, LED4_PIN, GRB>(leds[0], 3*MATRIX_TILE, MATRIX_TILE).setCorrection(TypicalLEDStrip);
+
+  FastLED.setBrightness(15);//!FastLED.setBrightness(BRIGHTNESS)
   FastLED.clear(true);
 
   ScrollingMsg.SetFont(Font12x16Data);
@@ -634,7 +651,7 @@ void setup(){
   ScrollingMsg.SetTextColrOptions(COLR_RGB | COLR_SINGLE, 0x00, 0x00, 0xff);
 
   StaticgMsg.SetFont(Font12x16Data);
-  StaticgMsg.Init(&leds, leds.Width(), ScrollingMsg.FontHeight() + 1, 0, 0); // >> 1 pixel
+  StaticgMsg.Init(&leds, leds.Width(), ScrollingMsg.FontHeight() + 1, 2, 0); // >> 2 pixels
   StaticgMsg.SetText((unsigned char *)txtDateA, sizeof(txtDateA) - 1);
   StaticgMsg.SetTextColrOptions(COLR_RGB | COLR_SINGLE, 0x00, 0x00, 0xff);
   
@@ -735,7 +752,7 @@ void setup(){
   Serial.println("SERVER STARTED");
 
   //  DISPLAY WELCOME MESSAGE
-  fxSinlon();                                 // Display special startup effect
+  //!fxSinlon();                                 // Display special startup effect
   while(ScrollingMsg.UpdateText() != 1)
   {
     FastLED.show();
@@ -744,7 +761,7 @@ void setup(){
   }
   ScrollingMsg.SetText((unsigned char *)szMesg, sizeof(szMesg) - 1);   // reset to start of string
 
-  //Serial.println(TIMER_BASE_CLK);
+  Serial.println("seup done:");
 }
 
 void loop(){
@@ -762,28 +779,35 @@ void loop(){
     dow = now.dayOfTheWeek();
 
     //txtDateA[7] = '2';// HRS//txtDateA[8] = '3';// HRS//txtDateA[10] = '5';// MIN//txtDateA[11] = '9';// MIN
-    sprintf(txtDateA, "%c%c%c%c%c%c%c%02d%c%02d", EFF_HSV_AH,0x00,0xff,0xff,0xff,0xff,0xff,h,'|',m);
-    sprintf(txtDateB, "%c%c%c%c%c%c%c%02d%c%02d", EFF_HSV_AH,0x00,0xff,0xff,0xff,0xff,0xff,h,':',m);
+    sprintf(txtDateA, "%c%c%c%c%c%c%c%02d|%02d %02d^ ", EFF_HSV_AH,0x00,0xff,0xff,0xff,0xff,0xff,h,m,t);
+    sprintf(txtDateB, "%c%c%c%c%c%c%c%02d:%02d %02d^ ", EFF_HSV_AH,0x00,0xff,0xff,0xff,0xff,0xff,h,m,t);
 
-    if(curMessage[0] == '\0'){  // when no message
-      sprintf(szMesg, "%c%c%c%c%c%c%c%c%c%c%s%02d%c%02d%c%c%c%c%c%c%c%c%c%c%c%c%s%02d%c%c%c%c%c%c%c%c%c%c%c%c%s%s%c%c%c%c%c%c%c%c%c%c%c%s%02d%c%02d%c%c%c%s%c%c",
-                        EFF_FRAME_RATE,0x00,timeRGBHSV,timeR,timeG,timeB,0xff,0xff,0xff,
-                        EFF_SCROLL_LEFT,"     ",h,':',m,EFF_DELAY_FRAMES,0x00,0x2c,EFF_CUSTOM_RC,0x02,
-                        tempRGBHSV,tempR,tempG,tempB,0xff,0xff,0xff,"      ",t,'^',' ',EFF_DELAY_FRAMES,0x00,0xee,
-                        dowRGBHSV,dowR,dowG,dowB,0xff,0xff,0xff,"      ",daysOfTheWeek[dow],' ',EFF_DELAY_FRAMES,0x00,0xee,
-                        dateRGBHSV,dateR,dateG,dateB,0xff,0xff,0xff,"      ",now.day(),'-',now.month(),EFF_DELAY_FRAMES,0x00,0xee,"      ",
-                        EFF_CUSTOM_RC,0x01);
+    // char 0x80 is 11 wide space, to make time align one space right
+
+    if(curMessage[0] == '\0'){
+      sprintf(curMessage, "%s", " ");
     }
-    else{
-      sprintf(szMesg, "%c%c%c%c%c%c%c%c%c%c%s%02d%c%02d%c%c%c%c%c%c%c%c%c%c%c%c%s%02d%c%c%c%c%c%c%c%c%c%c%c%c%s%s%c%c%c%c%c%c%c%c%c%c%c%s%02d%c%02d%c%c%c%s%c%c%c%c%c%c%c%c%c%s%s%c%c%c%c",
-                        EFF_FRAME_RATE,0x00,timeRGBHSV,timeR,timeG,timeB,0xff,0xff,0xff,
-                        EFF_SCROLL_LEFT,"     ",h,':',m,EFF_DELAY_FRAMES,0x00,0x2c,EFF_CUSTOM_RC,0x02,
-                        tempRGBHSV,tempR,tempG,tempB,0xff,0xff,0xff,"      ",t,'^',' ',EFF_DELAY_FRAMES,0x00,0xee,
-                        dowRGBHSV,dowR,dowG,dowB,0xff,0xff,0xff,"      ",daysOfTheWeek[dow],' ',EFF_DELAY_FRAMES,0x00,0xee,
-                        dateRGBHSV,dateR,dateG,dateB,0xff,0xff,0xff,"      ",now.day(),'-',now.month(),EFF_DELAY_FRAMES,0x00,0xee,"      ",
-                        msgRGBHSV,msgR,msgG,msgB,0xff,0xff,0xff,EFF_FRAME_RATE,msgSpeed,curMessage,"     ",EFF_FRAME_RATE,0x00,
-                        EFF_CUSTOM_RC,0x01);
-    }
+    
+     sprintf(szMesg, 
+     "             %02d:%02d %02d^%c%c%c%c%c%c\
+               TUE 14-03%c%c%c%c\
+                        %c%c", 
+        h, m, t, 128, EFF_DELAY_FRAMES,0x00,0x2c, EFF_CUSTOM_RC,0x02, 
+        129, EFF_DELAY_FRAMES,0x00,0xee,
+        EFF_CUSTOM_RC,0x01);
+
+
+
+
+    // sprintf(szMesg, "%c%c%c%c%c%c%c%c%c%c     %02d:%02d%c%c%c%c%c%c%c%c%c%c%c%c      %02d^ %c%c%c%c%c%c%c%c%c%c      %s %c%c%c%c%c%c%c%c%c%c      %02d-%02d%c%c%c      %c%c%c%c%c%c%c%c%c%s     %c%c%c%c",
+    //                   EFF_FRAME_RATE,0x00,timeRGBHSV,timeR,timeG,timeB,0xff,0xff,0xff,                                //  %c%c%c%c%c%c%c%c%c
+    //                   EFF_SCROLL_LEFT,h,m,EFF_DELAY_FRAMES,0x00,0x2c,EFF_CUSTOM_RC,0x02,                              //  %c     %02d:%02d%c%c%c%c%c
+    //                   tempRGBHSV,tempR,tempG,tempB,0xff,0xff,0xff,t,EFF_DELAY_FRAMES,0x00,0xee,                       //  %c%c%c%c%c%c%c      %02d^ %c%c%c
+    //                   dowRGBHSV,dowR,dowG,dowB,0xff,0xff,0xff,daysOfTheWeek[dow],EFF_DELAY_FRAMES,0x00,0xee,          //  %c%c%c%c%c%c%c      %s %c%c%c
+    //                   dateRGBHSV,dateR,dateG,dateB,0xff,0xff,0xff,now.day(),now.month(),EFF_DELAY_FRAMES,0x00,0xee,   //  %c%c%c%c%c%c%c      %02d-%02d%c%c%c      
+    //                   msgRGBHSV,msgR,msgG,msgB,0xff,0xff,0xff,EFF_FRAME_RATE,msgSpeed,curMessage,EFF_FRAME_RATE,0x00, //  %c%c%c%c%c%c%c%c%c%s     %c%c
+    //                   EFF_CUSTOM_RC,0x01);                                                                            //  %c%c
+
                   
     if(++updatetemp > 10){                    // Update temperature every 10 sec, visual glitch
       t = RTC.getTemperature();               // +or- from this for calibration
@@ -796,7 +820,7 @@ void loop(){
   if (msgOnly == 1) { // Message only display
     sprintf(szMesg, "%c%c%c%c%c%c%c%c%c%c%s%s%s%c%c",EFF_FRAME_RATE,msgSpeed,msgRGBHSV,msgR,msgG,msgB,0xff,0xff,0xff,EFF_SCROLL_LEFT,"            ",curMessage,"       ",EFF_CUSTOM_RC,0x01);
   }
-
+/*
   if (newMessageAvailable){
     strcpy(curMessage, newMessage);           // Copy new message to display
     eepromWriteString(0, newMessage);         // Write String to EEPROM Address 0
@@ -804,7 +828,7 @@ void loop(){
     Serial.println("new message received, updated EEPROM\n");
     delay(100);
     eepromWriteInt(BRT_ADDR, BRIGHTNESS);    // Write new brightness value
-    FastLED.setBrightness(BRIGHTNESS);
+    FastLED.setBrightness(15);//!FastLED.setBrightness(BRIGHTNESS)
     Serial.print("NeoMatrix Brightness set to ");
     Serial.println(BRIGHTNESS);
   }
@@ -817,27 +841,36 @@ void loop(){
     Serial.println(newTime);
     Serial.println("new time received, updated RTC");
   }
+  */
 
   rc = ScrollingMsg.UpdateText();
   if (rc == -1 || rc == 1)  // -1 means end of char array, 1 means end of msg because custom rc is received
   {
     ScrollingMsg.SetText((unsigned char *)szMesg, sizeof(szMesg) - 1);
+    Serial.println("rc=1");
   }
   else if (rc == 2)                               // EFFECT_CUSTOM_RC "\x02"
   {
-    for (int j = 2; j < timeDur; j++)                  // want to start on even number to run drawline
+    Serial.println("rc=2");
+    
+    for (int j = 2; j < 10; j++)                //timeDur  // want to start on even number to run drawline
     {
       if(j % 2 == 0){ //even
-        StaticgMsg.SetText((unsigned char *)txtDateA, sizeof(txtDateA) - 1);
-        StaticgMsg.UpdateText();
-        leds.DrawLine(0, 0, 0, 7, CRGB(0, 0, 0)); // blank column 1, due to visual glitch text shifting << 1 pixel
+      FastLED.clear();
+         StaticgMsg.SetText((unsigned char *)txtDateA, sizeof(txtDateA) - 1);
+         StaticgMsg.UpdateText();
+         leds.DrawLine(0, 0, 0, 7, CRGB(0, 0, 0)); // blank column 1, due to visual glitch text shifting << 1 pixel
+        Serial.println("even");
       }
       else{
-        StaticgMsg.SetText((unsigned char *)txtDateB, sizeof(txtDateB) - 1);
-        StaticgMsg.UpdateText();
+        FastLED.clear();
+         StaticgMsg.SetText((unsigned char *)txtDateB, sizeof(txtDateB) - 1);
+         StaticgMsg.UpdateText();
+        Serial.println("odd");
       }
       FastLED.show();
       digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
+      Serial.println("rc=22");
       delay(1000);
     }
   }
@@ -873,5 +906,13 @@ line227
 0xd6 214 Ö
 0xd7 215 ×
 
+sprintf(szMesg, "%c%c%c%c%c%c%c%c%c%c     %02d:%02d%c%c%c%c%c%c%c%c%c%c%c%c      %02d^ %c%c%c%c%c%c%c%c%c%c      %s %c%c%c%c%c%c%c%c%c%c      %02d-%02d%c%c%c      %c%c%c%c%c%c%c%c%c%s     %c%c%c%c",
+                        EFF_FRAME_RATE,0x00,timeRGBHSV,timeR,timeG,timeB,0xff,0xff,0xff,                                //  %c%c%c%c%c%c%c%c%c
+                        EFF_SCROLL_LEFT,h,m,EFF_DELAY_FRAMES,0x00,0x2c,EFF_CUSTOM_RC,0x02,                              //  %c     %02d:%02d%c%c%c%c%c
+                        tempRGBHSV,tempR,tempG,tempB,0xff,0xff,0xff,t,EFF_DELAY_FRAMES,0x00,0xee,                       //  %c%c%c%c%c%c%c      %02d^ %c%c%c
+                        dowRGBHSV,dowR,dowG,dowB,0xff,0xff,0xff,daysOfTheWeek[dow],EFF_DELAY_FRAMES,0x00,0xee,          //  %c%c%c%c%c%c%c      %s %c%c%c
+                        dateRGBHSV,dateR,dateG,dateB,0xff,0xff,0xff,now.day(),now.month(),EFF_DELAY_FRAMES,0x00,0xee,   //  %c%c%c%c%c%c%c      %02d-%02d%c%c%c      
+                        msgRGBHSV,msgR,msgG,msgB,0xff,0xff,0xff,EFF_FRAME_RATE,msgSpeed,curMessage,EFF_FRAME_RATE,0x00, //  %c%c%c%c%c%c%c%c%c%s     %c%c
+                        EFF_CUSTOM_RC,0x01);  
 
 */
