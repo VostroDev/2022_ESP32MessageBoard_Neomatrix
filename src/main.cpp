@@ -47,7 +47,7 @@
 #include "SPIFFS.h"
 #include <AsyncTCP.h>
 #include <ESPAsyncWebServer.h>
-#include <AsyncElegantOTA.h>                // *OTA 
+#include <AsyncElegantOTA.h>
 #include <ArduinoJson.h>
 
 #include "EEPROMHandler.h"                  // Storing message into permanent memory
@@ -55,7 +55,7 @@
 #include <FastLED.h>
 #include <LEDMatrix.h>
 #include <LEDText.h>
-#include <FontP12x16RW.h>                    // "FontRobert.h" 5x7 font for 2 lines display
+#include <FontP12x16RW.h>                   // Custom (modified) font
 
 #include <Wire.h>
 #include "RTClib.h"
@@ -91,7 +91,7 @@
 #define datRGB_ADDR 447
 #define msgRGB_ADDR 448
 
-#define BUZZER_PIN           23             //TODO 19 for lolin board 23 38p-board Buzzer pin
+#define BUZZER_PIN           23             // TODO 19 for lolin board 23 38p-board Buzzer pin
 #define LED_PIN              25             // NeoPixel pin TOP LEFT  1/4 display
 #define LED2_PIN             26             // NeoPixel pin TOP RIGHT 1/4 display
 #define LED3_PIN             27             // NeoPixel pin BOT LEFT  1/4 display
@@ -766,8 +766,8 @@ void setup(){
 
 void loop(){
   static uint32_t timeLast = 0;               // Heartbeat
-  static uint8_t t = 0;                       // temperature
-  static uint8_t updatetemp = 11;             // so updates temp at startup
+  static int t = 0;                           // temperature
+  static int updatetemp = 9999;               // so updates temp at startup
   
   if (millis() - timeLast >= 1000 && msgOnly == 0){
     digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
