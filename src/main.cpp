@@ -62,7 +62,7 @@
 #include <Wire.h>
 #include "RTClib.h"
 
-#define DISPLAY_TYPE_PCB                    //! DISPLAY_TYPE_PCB, DISPLAY_TYPE_FLEX
+#define DISPLAY_TYPE_FLEX                    //! DISPLAY_TYPE_PCB, DISPLAY_TYPE_FLEX
 
 #define BUF_SIZE    400                     // 400 out of 512 used
 #define PASS_BSIZE  9                       // 8 digit password
@@ -162,7 +162,7 @@ byte dowRGBHSV  = RW_RGB;                   // EFF_RGB,0xd3,0x54,0x00
 byte dateRGBHSV = RW_RGB;                   // EFF_RGB,0x00,0x80,0x80
 byte msgRGBHSV  = EFF_HSV_AH;
 
-char ssid[] = "38PMessageBoard";            // Change to your name
+char ssid[] = "StormTrooper9";            // Change to your name
 char password[PASS_BSIZE] = "password";     // dont change password here, change using web app
 
 uint16_t h = 0;
@@ -192,7 +192,7 @@ CRGB fleds[256];
 
 char txtDateA[] = { EFFECT_HSV_AH "\x00\xff\xff\xff\xff\xff" "12|30" };
 char txtDateB[] = { EFFECT_HSV_AH "\x00\xff\xff\xff\xff\xff" "12:30" };
-char szMesg[BUF_SIZE] = { EFFECT_FRAME_RATE "\x00" EFFECT_HSV_AH "\x00\xff\xff\xff\xff\xff" EFFECT_SCROLL_LEFT "     RW     "  EFFECT_CUSTOM_RC "\x01" };
+char szMesg[BUF_SIZE] = { EFFECT_FRAME_RATE "\x00" EFFECT_HSV_AH "\x00\xff\xff\xff\xff\xff" EFFECT_SCROLL_LEFT "     Hello R2D2     "  EFFECT_CUSTOM_RC "\x01" };
 
 // String decToHexa(int n) {
 //   char hexaDeciNum[2];            // char array to store hexadecimal number
