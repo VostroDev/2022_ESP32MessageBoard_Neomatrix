@@ -2,8 +2,9 @@
   15/03/2023
   Author: R WILSON
   Platforms: ESP32 ONLY - ESP8266 not supported
-  Version: 5.0.0 - 15 Mar 2023
+  Version: 5.0.1 - 23 Feb 2024
   Language: C/C++/Arduino
+  v5.0.1 - softRTC option added
   v5.0.0 - 8 panel xlarge panel size version - FLEX PCB VERSION
   v4.0.0 - large panel size version - FLEX PCB VERSION (4 panel)
   v4.0.0 - validity check on message text
@@ -20,25 +21,25 @@
   me-no-dev: https://github.com/me-no-dev/AsyncTCP
   me-no-dev: https://github.com/me-no-dev/ESPAsyncWebServer
   Rui Santos: https://RandomNerdTutorials.com - information resource
-  
+
   FastLED Daniel Garcia: https://fastled.io/                        (lib version
   LEDText A Liddiment https://github.com/AaronLiddiment/LEDText     (lib version 3.4.0)
   LEDMatrix A Liddiment https://github.com/AaronLiddiment/LEDMatrix (lib version )
     modified: J Skrotzky https://github.com/Jorgen-VikingGod/LEDMatrix Dec'21)
-   
+
   LOAD TO SPIFFS THESE EXTERNAL FILES:
-    >> index.html notfound.html settings.html time.html timepicker.html 
-  Connect to ESP32MessageBoard WIFI AP created by ESP32  
+    >> web client files in <data> folder
+  Connect to ESP32MessageBoard WIFI AP created by ESP32
   Open browser to http://192.168.4.1/
-  Open browser to http://1.2.3.4/ 
+  Open browser to http://1.2.3.4/
   Password: 12345678 or password
   Enter message to be displayed on the NeoMatrix scrolling display
 
-   LED PINS 25 26 27 14
+  MATRIX_4x2 LED PINS (25-brown) (26-red) (27-orange) (14-Purple)
    ________ ________                                 ________ ________  ________ ________
   |________'________| (27) < 8x64x1  8x64x2 > 25,26 |________'________||________'________|
   |________'________| (13) < 8x64x1  8x64x2 > 27,14 |________'________||________'________|
-      MATRIX_2x2                                                  MATRIX_4x2                                     
+      MATRIX_2x2                                                  MATRIX_4x2
 ----------------------------------------------------------------------------------------*/
 
 #include <Arduino.h>
@@ -59,6 +60,8 @@
 
 #include <Wire.h>
 #include "RTClib.h"
+
+#define USE_SOFT_RTC
 
 #define BUF_SIZE    400                     // 400 out of 512 used
 #define PASS_BSIZE  9                       // 8 digit password
@@ -98,7 +101,7 @@
 #define LED4_PIN             14             // NeoPixel pin BOT RIGHT 1/4 display
 #define LED_BUILTIN          5              // lolin buildin led on 5
 #define VOLTS                5
-#define MAX_MA               1000            // !change to 3000
+#define MAX_MA               3000            // !change to 3000
 #define MATRIX_TYPE          VERTICAL_ZIGZAG_MATRIX
 #define MATRIX_TILE_WIDTH   -64             // width of EACH NEOPIXEL MATRIX (not total display)
 #define MATRIX_TILE_HEIGHT   8              // height of each matrix
@@ -167,7 +170,12 @@ byte msgRGBHSV  = EFF_HSV_AH;
 char ssid[] = "DoitMessageBoard";          // Change to your name
 char password[PASS_BSIZE] = "password";     // dont change password here, change using web app
 
-RTC_DS3231 RTC;
+#if defined(USE_SOFT_RTC)
+  RTC_Millis RTC;
+#else
+  RTC_DS3231 RTC;
+#endif
+
 uint16_t h = 0;
 uint16_t m = 0;
 uint16_t dow = 0;
@@ -656,15 +664,19 @@ void setup(){
   StaticgMsg.SetTextColrOptions(COLR_RGB | COLR_SINGLE, 0x00, 0x00, 0xff);
   
   //  RTC  
+  
   Wire.begin();                             // DS3231 RTC I2C - SDA(21) and SCL(22)
 
-  Serial.print("\nRTC STARTING >>> ");                                  
-  if (! RTC.begin()) {
-    Serial.println("RTC NOT FOUND");
-    rtcErrorHandler();                      // Blocking call, dont move on
-  }
-  Serial.println("RTC STARTED\n");
-
+  #if defined(USE_SOFT_RTC)
+    RTC.begin(DateTime(F(__DATE__), F(__TIME__)));
+  #else
+    Serial.print("\nRTC STARTING >>> ");                                  
+    if (! RTC.begin()) {
+      Serial.println("RTC NOT FOUND");
+      rtcErrorHandler();                      // Blocking call, dont move on
+    }
+    Serial.println("RTC STARTED\n");
+  #endif
   now = RTC.now(); 
   sprintf(szTime, "Time: %02d:%02d", now.hour(), now.minute());
   Serial.println(szTime);
@@ -779,8 +791,13 @@ void loop(){
     dow = now.dayOfTheWeek();
 
     if(++updatetemp > 10){                    // Update temperature every 10 sec, visual glitch
+    #if defined(USE_SOFT_RTC)
+      t = 30;
+      updatetemp = 0;
+    #else
       t = RTC.getTemperature();               // +or- from this for calibration
       updatetemp = 0;
+    #endif
     }
 
     //txtDateA[7] = '2';// HRS//txtDateA[8] = '3';// HRS//txtDateA[10] = '5';// MIN//txtDateA[11] = '9';// MIN
