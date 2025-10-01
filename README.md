@@ -147,8 +147,8 @@ Contributions are welcome! Please feel free to submit a Pull Request. For major 
 ## ✍️ Author
 
 **R Wilson** - [VostroDev](https://github.com/VostroDev)
-- Email: vostrodev@gmail.com
-- Website: [vostro.dev](https://vostro.dev)
+- Email: rwilson@wilteq.co.za
+- Website: [vostro.dev](https://wilteq.co.za/)
 
 ## 📝 License
 
@@ -167,7 +167,10 @@ Special thanks to the following projects and their maintainers:
 
 ---
 <div align="center">
-Made by Wilteq.co.za
-<br>
-© 2022-2025
+  <p>Made by</p>
+  <a href="https://wilteq.co.za">
+    <img src="doc/vostro-logo-transparent-dark-small.png" alt="Vostro Logo" width="200">
+  </a>
+
+  © 2022-2025
 </div>
